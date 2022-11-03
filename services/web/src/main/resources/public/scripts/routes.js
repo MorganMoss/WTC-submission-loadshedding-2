@@ -1,12 +1,13 @@
 import {main} from "./main.js";
+import {notFound} from "./not-found.js";
 
-export const mainURL = '';
+export const mainURL = 'main';
 
 /**
  * Sets up all the routing for the webapp.
  * This is called when the app starts.
  */
-export function setupRoutes(){
+function setupRoutes(){
 
     window.addEventListener('load', () => {
         const router = new Router({
@@ -31,3 +32,4 @@ export function setupRoutes(){
     });
 }
 
+setupRoutes();

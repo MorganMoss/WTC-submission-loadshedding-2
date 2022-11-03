@@ -10,6 +10,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.HttpStatus;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.*;
+import wethinkcode.model.Schedule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static wethinkcode.schedule.ScheduleService.SERVICE;
@@ -18,7 +19,7 @@ import static wethinkcode.schedule.ScheduleService.SERVICE;
  * I am an API / functional test of the ScheduleService. I am not a unit test.
  */
 @Tag( "expensive" )
-@Disabled( "Enable this to test your ScheduleService. DO NOT MODIFY THIS FILE.")
+//@Disabled( "Enable this to test your ScheduleService. DO NOT MODIFY THIS FILE.")
 public class ScheduleServiceAPITest
 {
     public static final int TEST_PORT = 8888;
@@ -34,6 +35,7 @@ public class ScheduleServiceAPITest
     @BeforeAll
     public static void initTestScheduleFixture() throws IOException, URISyntaxException {
         SERVICE.initialise("-p=" + TEST_PORT);
+        SERVICE.activate("Test Schedule Service");
     }
 
     @AfterAll
@@ -43,30 +45,30 @@ public class ScheduleServiceAPITest
 
     @Test
     public void getSchedule_someTown(){
-        HttpResponse<ScheduleDO> response = Unirest
+        HttpResponse<Schedule> response = Unirest
             .get(SERVICE.url() + "/Eastern%20Cape/Gqeberha/4" )
-            .asObject( ScheduleDO.class );
+            .asObject( Schedule.class );
         assertEquals( HttpStatus.OK, response.getStatus());
 
-        ScheduleDO schedule = response.getBody();
+        Schedule schedule = response.getBody();
         assertEquals( 4, schedule.numberOfDays() );
         assertEquals( LocalDate.now(), schedule.getStartDate() );
     }
 
     @Test
     public void getSchedule_nonexistentTown(){
-        HttpResponse<ScheduleDO> response = Unirest
+        HttpResponse<Schedule> response = Unirest
             .get(SERVICE.url() + "/Mars/Elonsburg/4" )
-            .asObject( ScheduleDO.class );
+            .asObject( Schedule.class );
         assertEquals( HttpStatus.NOT_FOUND, response.getStatus() );
         assertEquals( 0, response.getBody().numberOfDays() );
     }
 
     @Test
     public void illegalStage(){
-        HttpResponse<ScheduleDO> response = Unirest
+        HttpResponse<Schedule> response = Unirest
             .get(SERVICE.url() + "/Western%20Cape/Knysna/42" )
-            .asObject( ScheduleDO.class );
+            .asObject( Schedule.class );
         assertEquals( HttpStatus.BAD_REQUEST, response.getStatus() );
     }
 

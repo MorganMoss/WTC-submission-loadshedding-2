@@ -12,7 +12,7 @@ import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import org.junit.jupiter.api.*;
-import wethinkcode.places.model.Place;
+import wethinkcode.model.Place;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static wethinkcode.places.PlacesService.SERVICE;

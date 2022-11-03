@@ -4,8 +4,7 @@ import java.io.*;
 import java.util.List;
 
 import org.junit.jupiter.api.*;
-import wethinkcode.places.model.Place;
-import wethinkcode.places.model.Places;
+import wethinkcode.model.Place;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static wethinkcode.places.PlacesTestData.createReaderForTest;

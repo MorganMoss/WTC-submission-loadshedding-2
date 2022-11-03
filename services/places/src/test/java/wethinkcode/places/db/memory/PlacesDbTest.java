@@ -3,8 +3,8 @@ package wethinkcode.places.db.memory;
 import java.util.List;
 
 import org.junit.jupiter.api.*;
-import wethinkcode.places.model.Municipality;
-import wethinkcode.places.model.Province;
+import wethinkcode.model.Municipality;
+import wethinkcode.model.Province;
 
 import static org.junit.jupiter.api.Assertions.*;
 

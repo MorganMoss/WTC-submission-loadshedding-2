@@ -4,9 +4,10 @@ import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
+import wethinkcode.BadStageException;
 import wethinkcode.model.Schedule;
+import wethinkcode.model.Stage;
 import wethinkcode.router.Route;
-import wethinkcode.schedule.BadProvinceNameException;
 import wethinkcode.schedule.transfer.ScheduleDAO;
 
 import java.util.Optional;
@@ -24,23 +25,19 @@ public class ServiceController implements Route {
     private void getSchedule(Context context) {
         String province = context.pathParam("province");
         String place = context.pathParam("place");
-        int stage;
+        Stage stage;
+
         try {
-            stage = Integer.parseInt(context.pathParam("stage"));
-        } catch (NumberFormatException e){
+            stage = Stage.stageFromNumber(Integer.parseInt(context.pathParam("stage")));
+        } catch (NumberFormatException | BadStageException e){
             context.status(HttpStatus.BAD_REQUEST);
             return;
         }
 
         Optional<Schedule> schedule;
 
-        try {
-            schedule = ScheduleDAO.getSchedule(province, place, stage);
-        } catch (BadProvinceNameException e) {
-            context.status(HttpStatus.BAD_REQUEST);
-            context.json(e);
-            return;
-        }
+        schedule = ScheduleDAO.getSchedule(province, place, stage.stage);
+
 
         if (schedule.isPresent()){
             context.json(schedule.get());
@@ -48,9 +45,8 @@ public class ServiceController implements Route {
             return;
         }
 
+        context.json(ScheduleDAO.emptySchedule());
         context.status(HttpStatus.NOT_FOUND);
-
-
 
     }
 

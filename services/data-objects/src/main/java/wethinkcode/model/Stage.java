@@ -14,8 +14,8 @@ public enum Stage {
     STAGE7 ("Stage 7 Loadshedding", 7),
     STAGE8 ("No Electricity", 8);
 
-    final String description;
-    final int stage;
+    public final String description;
+    public final int stage;
     Stage(String description, int stage) {
         this.description = description;
         this.stage = stage;

@@ -56,7 +56,16 @@ public class PlacesService extends Service {
     }
 
     private Places initPlacesDb() throws URISyntaxException {
-        File databaseFile = new File(Resources.getResource(properties.get("data")).toURI());
+
+        File databaseFile;
+
+        try {
+            databaseFile = new File(Resources.getResource(properties.get("data")).toURI());
+        } catch (IllegalArgumentException e) {
+            databaseFile = new File(properties.get("data"));
+        }
+
+
         try {
             return new PlacesCsvParser().parseCsvSource(databaseFile);
         } catch (IOException e) {

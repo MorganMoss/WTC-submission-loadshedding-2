@@ -9,11 +9,10 @@ import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONException;
 import org.junit.jupiter.api.*;
-import wethinkcode.stage.model.BadStageException;
-import wethinkcode.stage.model.Stage;
+import wethinkcode.BadStageException;
+import wethinkcode.model.Stage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wethinkcode.service.Service.activate;
 import static wethinkcode.stage.StageService.SERVICE;
 
 /**
@@ -28,7 +27,7 @@ public class StageServiceAPITest
 
     @BeforeAll
     public static void startServer() throws IOException, URISyntaxException {
-        activate(SERVICE.initialise("-p="+TEST_PORT), "Test-Stage-Service");
+        SERVICE.initialise("-p="+TEST_PORT).activate("Test Stage-Service");
 
     }
 
@@ -55,7 +54,7 @@ public class StageServiceAPITest
     }
 
     @Test
-    public void setNewStage_illegalStageValue() throws BadStageException {
+    public void setNewStage_illegalStageValue() {
         HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/stage" ).asJson();
         assertEquals( HttpStatus.OK, response.getStatus() );
         assertEquals( "application/json", response.getHeaders().getFirst( "Content-Type" ) );

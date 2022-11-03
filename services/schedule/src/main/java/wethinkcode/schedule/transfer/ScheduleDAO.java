@@ -3,11 +3,7 @@ package wethinkcode.schedule.transfer;
 import kong.unirest.*;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
-import wethinkcode.model.Day;
-import wethinkcode.model.Province;
-import wethinkcode.model.Schedule;
-import wethinkcode.model.Slot;
-import wethinkcode.schedule.BadProvinceNameException;
+import wethinkcode.model.*;
 
 import java.time.LocalTime;
 import java.util.*;
@@ -17,18 +13,17 @@ import static wethinkcode.schedule.ScheduleService.SERVICE;
 public class ScheduleDAO {
     // There *must* be a better way than this...
     // See Steps 4 and 5 (the optional ones!) in the course notes.
-    public static Optional<Schedule> getSchedule(String province, String place, int stage) throws BadProvinceNameException {
-        validateProvince(province);
-//        validatePlace(place);
-//        validateStage(stage);
+    public static Optional<Schedule> getSchedule(String province, String place, int stage) {
+        if (validateProvince(province)){
+            return Optional.of( mockSchedule() );
+        }
 
+//        Stage s = Stage.stageFromNumber(stage);
 
-        return province.equalsIgnoreCase( "Mars" )
-                ? Optional.empty()
-                : Optional.of( mockSchedule() );
+        return Optional.empty();
     }
 
-    private static void validateProvince(String province) throws BadProvinceNameException {
+    private static boolean validateProvince(String province) {
         JSONObject toMatch = new JSONObject(new Province(province));
 
         JSONArray provinces = Unirest
@@ -37,9 +32,7 @@ public class ScheduleDAO {
                 .getBody()
                 .getArray();
 
-        if (!provinces.toList().contains(toMatch)) {
-            throw new BadProvinceNameException();
-        }
+        return provinces.toList().contains(toMatch);
     }
 
     /**

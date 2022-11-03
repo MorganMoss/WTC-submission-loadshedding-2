@@ -145,7 +145,7 @@ public class Properties implements Callable<Integer> {
         }
 
         if (commands == null) {
-            commands = Boolean.valueOf((String) properties.getOrDefault("commands", DEFAULT_COMMAND));
+            commands = Boolean.valueOf((String) properties.getOrDefault("commands", DEFAULT_COMMAND.toString()));
             logger.info("Loaded Default Commands: " + commands);
         } else {
             logger.info("CLI Argument Found for Commands: " + commands);
