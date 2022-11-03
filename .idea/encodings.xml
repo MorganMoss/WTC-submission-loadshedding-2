@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/common/logger/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/logger/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/router/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/router/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/data-objects/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/data-objects/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/placesOLD/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/placesOLD/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/service-manager/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/service-manager/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services.common/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services.common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/data-objects/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/data-objects/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/places/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/places/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/schedule/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/schedule/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/stage/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/stage/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/web/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/web/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+  </component>
+</project>
