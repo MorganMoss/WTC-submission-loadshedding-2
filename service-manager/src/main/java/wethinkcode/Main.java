@@ -22,12 +22,17 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
-        PLACES_SERVICE.initialise("-o=false", "-p="+PLACES_PORT).activate("Places-Service");
-        Thread.sleep(1000);
-        STAGE_SERVICE.initialise("-o=false", "-p="+STAGE_PORT).activate("Stage-Service");
-        Thread.sleep(1000);
-        SCHEDULE_SERVICE.initialise("-o=false", "-p="+SCHEDULE_PORT).activate("Schedule-Service");
-        Thread.sleep(1000);
-        WEB_SERVICE.initialise("-o=false", "-p="+WEB_PORT).activate("Web-Service");
+        PLACES_SERVICE
+                .initialise("-o=false", "-p="+PLACES_PORT)
+                .activate("Places-Service");
+        STAGE_SERVICE
+                .initialise("-o=false", "-p="+STAGE_PORT)
+                .activate("Stage-Service");
+        SCHEDULE_SERVICE
+                .initialise("-o=false", "-p="+SCHEDULE_PORT)
+                .activate("Schedule-Service");
+        WEB_SERVICE
+                .initialise("-o=false", "-p="+WEB_PORT)
+                .activate("Web-Service");
     }
 }

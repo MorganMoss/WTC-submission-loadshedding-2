@@ -32,7 +32,7 @@ public enum Stage {
             case 6 -> {return STAGE6;}
             case 7 -> {return STAGE7;}
             case 8 -> {return STAGE8;}
-            default -> {throw new BadStageException(stage + " is an invalid stage");}
+            default -> throw new BadStageException(stage + " is an invalid stage");
 
         }
     }

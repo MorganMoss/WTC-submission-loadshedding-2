@@ -1,5 +1,8 @@
 package wethinkcode.schedule;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -12,34 +15,43 @@ import wethinkcode.service.Service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ScheduleServiceTest
 {
-    static Service placesService;
-
     @BeforeAll
     static void startPlacesService() throws IOException, URISyntaxException {
-        placesService = new PlacesService().initialise("-o=false", "-p=3221");
-        placesService.activate("Places Service");
+        PlacesService.SERVICE
+                .initialise("-o=false", "-p=3222")
+                .activate("Places Service");
 
-        ScheduleService.SERVICE.initialise("-o=false");
+        File config = new File("test.properties");
+        config.deleteOnExit();
+        config.delete();
+        if (config.createNewFile()){
+           try(FileWriter r = new FileWriter(config)) {
+               r.write("places-url=http://localhost:3222");
+           }
+        }
+
+        ScheduleService.SERVICE.initialise("-o=false", "-c="+config.getAbsolutePath());
     }
 
     @AfterAll
     static void closeAll() {
-        placesService.stop();
+        PlacesService.SERVICE.stop();
     }
 
     @Test
     public void testSchedule_someTown() {
         final Optional<Schedule> schedule = ScheduleDAO.getSchedule( "Eastern Cape", "Gqeberha", 4 );
-        assertThat( schedule.isPresent() );
+        assertTrue( schedule.isPresent() );
         assertEquals( 4, schedule.get().numberOfDays() );
     }
 
     @Test
     public void testSchedule_nonexistentTown() {
         final Optional<Schedule> schedule = ScheduleDAO.getSchedule( "Mars", "Elonsburg", 2 );
-        assertThat( schedule.isEmpty() );
+        assertTrue( schedule.isEmpty() );
     }
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
 
+@SuppressWarnings("unused")
 public class ServiceController implements Route {
     @NotNull
     @Override

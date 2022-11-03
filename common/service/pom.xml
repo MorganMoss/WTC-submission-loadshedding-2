@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>wethinkcode</groupId>
-            <artifactId>Logger</artifactId>
+            <artifactId>logger</artifactId>
             <version>1.0</version>
             <scope>compile</scope>
         </dependency>

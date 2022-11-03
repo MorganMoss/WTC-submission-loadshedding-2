@@ -17,6 +17,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 import static java.lang.Math.round;
 import static wethinkcode.stage.StageService.SERVICE;
 
+@SuppressWarnings("unused")
 public class StageController implements Route {
 
     /**
@@ -59,12 +60,9 @@ public class StageController implements Route {
     @NotNull
     @Override
     public EndpointGroup getEndPoints() {
-        return () -> {
-            path("stage", () -> {
-                get(this::getStage);
-                post(this::setStage);
-            });
-
-        };
+        return () -> path("stage", () -> {
+            get(this::getStage);
+            post(this::setStage);
+        });
     }
 }

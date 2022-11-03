@@ -10,7 +10,7 @@ import java.util.List;
 
 // Note that a real model would be a bit more sophisticated and complex,
 // and we'd want to put the source in its own package;
-// this model is just a dummy "the minimum thing that could possible work"
+// this model is just a dummy "the minimum thing that could possibly work"
 // so that we can stay focussed on service interconnections and communication
 // without getting bogged down in modelling.
 public class Schedule

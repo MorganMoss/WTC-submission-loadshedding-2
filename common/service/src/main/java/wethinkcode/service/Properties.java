@@ -78,7 +78,6 @@ public class Properties implements Callable<Integer> {
     /**
      * Uses reflection to fetch the default.properties file from resources.
      * Tries the child class first, then if that fails, it will try the Service class.
-     * @throws IOException if an I/O exception occurs.
      */
     void loadDefaultProperties(){
         InputStream content;

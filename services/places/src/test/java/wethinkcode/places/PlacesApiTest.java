@@ -22,7 +22,7 @@ import static wethinkcode.places.PlacesService.SERVICE;
  */
 public class PlacesApiTest
 {
-    public static final int TEST_PORT = 7777;
+    public static final int TEST_PORT = 7377;
 
 
     @BeforeAll
@@ -53,6 +53,7 @@ public class PlacesApiTest
         SERVICE
             .initialise("-p="+TEST_PORT, "-c="+properties.getAbsolutePath())
             .activate("Test-Places-Service");
+
 
     }
 

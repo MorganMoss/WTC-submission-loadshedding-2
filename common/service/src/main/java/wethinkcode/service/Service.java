@@ -45,6 +45,7 @@ public abstract class Service implements Runnable {
     protected Javalin server;
     protected Properties properties;
 
+    private boolean waiting = false;
     public void start() {
         server.start(properties.port);
     }
@@ -70,9 +71,17 @@ public abstract class Service implements Runnable {
      * @param name of that services thread
      */
     public void activate(String name){
+        waiting = true;
         Thread thread = new Thread(this);
         thread.setName(name);
         thread.start();
+        while (waiting) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -81,6 +90,7 @@ public abstract class Service implements Runnable {
     @Override
     public void run(){
         start();
+        waiting = false;
         if (properties.commands) {
             Scanner s = new Scanner(System.in);
             String nextLine;
@@ -92,9 +102,8 @@ public abstract class Service implements Runnable {
                         return;
                     }
 
-                    case "restart" -> {
-                        restart(Arrays.copyOfRange(args, 1, args.length));
-                    }
+                    case "restart" -> restart(Arrays.copyOfRange(args, 1, args.length));
+
 
                     case "help" -> System.out.println(
                         """
@@ -107,7 +116,6 @@ public abstract class Service implements Runnable {
                 }
             }
         }
-
     }
 
     /**

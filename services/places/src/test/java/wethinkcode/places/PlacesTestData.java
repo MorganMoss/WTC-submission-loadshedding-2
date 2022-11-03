@@ -18,7 +18,7 @@ public abstract class PlacesTestData
     public static final String HEADER = "Name,Feature_Description,pklid,Latitude,Longitude,Date,MapInfo,Province,fklFeatureSubTypeID,Previous_Name,fklMagisterialDistrictID,ProvinceID,fklLanguageID,fklDisteral,Local Municipality,Sound,District Municipality,fklLocalMunic,Comments,Meaning\n";
     public static final String MISSING_ITEMS_HEADER = "Name, pklid, Date, Province, Sound";
     public static final String CSV_DATA =
-        // First line in the data is just headers and must be ignored..
+        // First line in the data is just headers and must be ignored.
         // In total, 13 lines including the header line, 5 of these are towns/urban areas.
         //
         // Amatikulu: we want the town, not the station.

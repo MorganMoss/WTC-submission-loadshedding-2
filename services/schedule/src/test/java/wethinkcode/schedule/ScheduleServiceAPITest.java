@@ -1,5 +1,7 @@
 package wethinkcode.schedule;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -11,6 +13,7 @@ import kong.unirest.HttpStatus;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.*;
 import wethinkcode.model.Schedule;
+import wethinkcode.places.PlacesService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static wethinkcode.schedule.ScheduleService.SERVICE;
@@ -22,7 +25,7 @@ import static wethinkcode.schedule.ScheduleService.SERVICE;
 //@Disabled( "Enable this to test your ScheduleService. DO NOT MODIFY THIS FILE.")
 public class ScheduleServiceAPITest
 {
-    public static final int TEST_PORT = 8888;
+    public static final int TEST_PORT = 8876;
 
     @BeforeAll
     public static void initJsonMapper(){
@@ -32,14 +35,29 @@ public class ScheduleServiceAPITest
         Unirest.config().setObjectMapper( new kong.unirest.jackson.JacksonObjectMapper( mapper ) );
     }
 
+
     @BeforeAll
     public static void initTestScheduleFixture() throws IOException, URISyntaxException {
-        SERVICE.initialise("-p=" + TEST_PORT);
-        SERVICE.activate("Test Schedule Service");
+        PlacesService.SERVICE
+                .initialise("-o=false", "-p=3221")
+                .activate("Places Service");
+
+        File config = new File("test-api.properties");
+        config.deleteOnExit();
+        if (config.createNewFile()){
+            try(FileWriter r = new FileWriter(config)) {
+                r.write("places-url=http://localhost:3221");
+            }
+        }
+
+        SERVICE
+                .initialise("-p=" + TEST_PORT, "-c="+config.getAbsolutePath())
+                .activate("Test Schedule Service");
     }
 
     @AfterAll
     public static void destroyTestFixture(){
+        PlacesService.SERVICE.stop();
         SERVICE.stop();
     }
 

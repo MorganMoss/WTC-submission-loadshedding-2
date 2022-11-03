@@ -94,16 +94,17 @@ public class PlacesCsvParserTest
                     fw.write(PlacesTestData.CSV_DATA);
                 }
             }
-
+            file.deleteOnExit();
         }
         places = parser.parseCsvSource( file );
         assertEquals( 5, places.size() );
-        file.delete();
+
     }
 
     @Test
     public void badFile() throws IOException {
         File file = new File("bad.csv");
+        file.deleteOnExit();
         try {
             places = parser.parseCsvSource( file );
             fail("Must throw fileNotFoundException");
@@ -111,7 +112,6 @@ public class PlacesCsvParserTest
             return;
         }
             fail("Wrong exception thrown");
-        file.delete();
     }
 
     @Test
@@ -124,17 +124,16 @@ public class PlacesCsvParserTest
                     fw.write(PlacesTestData.CSV_DATA);
                 }
             }
+            file.deleteOnExit();
         }
         try {
             places = parser.parseCsvSource( file );
             fail("Must throw Exception");
         } catch (RuntimeException e){
             assertEquals("Bad CSV Header", e.getMessage());
-            file.delete();
             return;
         }
         fail("Wrong exception thrown");
-        file.delete();
     }
 
 }

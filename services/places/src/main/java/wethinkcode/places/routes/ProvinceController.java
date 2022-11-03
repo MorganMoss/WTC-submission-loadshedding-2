@@ -15,6 +15,7 @@ import static wethinkcode.places.PlacesService.SERVICE;
 
 import wethinkcode.router.Route;
 
+@SuppressWarnings("unused")
 public class ProvinceController implements Route {
     /**
      * Gets a municipality by name

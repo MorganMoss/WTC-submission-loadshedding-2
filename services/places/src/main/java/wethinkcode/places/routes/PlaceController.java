@@ -15,6 +15,7 @@ import static wethinkcode.places.PlacesService.SERVICE;
 
 import wethinkcode.router.Route;
 
+@SuppressWarnings("unused")
 public class PlaceController implements Route {
 
     /**
@@ -56,6 +57,33 @@ public class PlaceController implements Route {
         }
     }
 
+    private void placeExists(Context context) {
+        String province = context.pathParam("province");
+        if (SERVICE.places
+                .provinces()
+                .stream()
+                .noneMatch(p -> p.name().equals(province))
+        ) {
+            context.status(HttpStatus.NOT_FOUND);
+            return;
+        }
+
+        String place = context.pathParam("place");
+
+        if (SERVICE.places
+                .placesInProvince(province)
+                .stream()
+                .noneMatch(p -> p.name().equals(place))
+        ) {
+            context.status(HttpStatus.NOT_FOUND);
+            context.json("Place does not exist in province : " + province);
+            return;
+        }
+
+        context.status(HttpStatus.FOUND);
+
+
+    }
 
     @NotNull
     @Override
@@ -66,6 +94,9 @@ public class PlaceController implements Route {
                 path("province/{province}", () -> get(this::getPlacesInProvince));
                 path("municipality/{municipality}", () -> get(this::getPlacesInMunicipality));
             });
+            path("{province}/{place}", () -> get(this::placeExists));
         };
     }
+
+
 }
