@@ -26,7 +26,7 @@ public class PlacesApiTest
 
 
     @BeforeAll
-    public static void startServer() throws IOException, URISyntaxException {
+    public static void startServer() throws IOException{
 
 
         File data = new File("test.csv");
@@ -64,7 +64,7 @@ public class PlacesApiTest
 
     @Test
     public void getProvincesJson(){
-        HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/provinces" ).asJson();
+        HttpResponse<JsonNode> response = Unirest.get(  SERVICE.url() + "/provinces" ).asJson();
         JSONArray array = response.getBody().getArray();
         Set<String> provinces = Set.of("KwaZulu-Natal", "Western Cape", "Gauteng", "Northern Cape", "Free State");
         Set<String> actual = new HashSet<>();
@@ -76,7 +76,7 @@ public class PlacesApiTest
 
     @Test
     public void getTownsInAProvince_provinceExistsInDb(){
-        HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/places/province/KwaZulu-Natal").asJson();
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/places/province/KwaZulu-Natal").asJson();
         JSONArray array = response.getBody().getArray();
         Set<Place> places = Set.of(new Place("Amatikulu", "uMlalazi"));
         Set<Place> actual = new HashSet<>();
@@ -89,11 +89,8 @@ public class PlacesApiTest
 
     @Test
     public void getTownsInAProvince_noSuchProvinceInDb(){
-        HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/place/Oregon" ).asJson();
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/place/Oregon" ).asJson();
         assertEquals(404, response.getStatus());
     }
 
-    private String serverUrl(){
-        return "http://localhost:" + TEST_PORT;
-    }
 }

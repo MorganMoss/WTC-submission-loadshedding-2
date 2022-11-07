@@ -10,10 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import wethinkcode.router.Router;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
 import static wethinkcode.logger.Logger.formatted;
 
 
@@ -42,44 +42,94 @@ import static wethinkcode.logger.Logger.formatted;
  * </p>
  */
 public abstract class Service implements Runnable {
-    protected Javalin server;
+    /**
+     * The properties of this service, can hold any amount of custom data, use properties.get(< key >) to get it.
+     */
     protected Properties properties;
-
-    private boolean waiting = false;
-    public void start() {
-        server.start(properties.port);
-    }
-
-    public void stop() {
-        server.stop();
-    }
+    /**
+     * The javalin server used to host this service.
+     */
+    private Javalin server;
+    /**
+     * Used for waiting
+     */
+    private final Object lock = new Object();
 
     /**
-     * Why not put all of this into the constructor? Well, this way makes
-     * it easier (possible!) to test an instance of Service without
-     * starting up all the big machinery (i.e. without calling initialise()).
+     * <b>Override this method</b> for a custom JsonMapper
+     * <br/>
+     * Use GSON for serialisation instead of Jackson by default
+     * because GSON allows for serialisation of objects without noargs constructors.
+     *
+     * @return A JsonMapper for Javalin
      */
-    public Service initialise(String ... args) throws IOException, URISyntaxException {
-        properties = this.initProperties(args);
-        server = this.initHttpServer();
-        this.addRoutes();
-        return this;
+    protected JsonMapper createJsonMapper() {
+        return new GSONMapper(this.getClass().getSimpleName());
     }
+
+
+    /**
+     * <b>Override this method</b> to add extra initialization to the javalin server.
+     * <br/>
+     * Runs after the properties, server and routes have been initialized.
+     */
+    protected void customServiceInitialisation() {}
+
+    /**
+     * <b>Override this method</b> to add extra configuration to the javalin server.
+     * @param config object of the javalin server
+     */
+    protected void customJavalinConfig(JavalinConfig config) {}
 
     /**
      * Takes a service and runs it in a separate thread.
      * @param name of that services thread
      */
-    public void activate(String name){
-        waiting = true;
+    @SuppressWarnings("SleepWhileHoldingLock")
+    public final void activate(String name){
+        if (properties == null || server == null){
+            System.err.println("Service not initialised. Probably did not call initialize()");
+            return;
+        }
+
         Thread thread = new Thread(this);
         thread.setName(name);
         thread.start();
-        while (waiting) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+
+        try {
+            synchronized (lock){
+                lock.wait();
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Allows accepting certain general commands from sys.in during runtime
+     */
+    private void startCommands(){
+        Scanner s = new Scanner(System.in);
+        String nextLine;
+        while ((nextLine = s.nextLine())!=null) {
+            String[] args = nextLine.split(" ");
+            switch (args[0].toLowerCase()) {
+                case "quit" -> {
+                    stop();
+                    return;
+                }
+
+                case "restart" -> restart(Arrays.copyOfRange(args, 1, args.length));
+
+
+                case "help" -> System.out.println(
+                        """
+                                commands available:
+                                    'help' - list of commands
+                                    'quit' - close the service
+                                    'restart' <args> - restart this service with new config
+                                """
+                );
             }
         }
     }
@@ -88,33 +138,15 @@ public abstract class Service implements Runnable {
      * Starts server and optionally live commands from sys.in
      */
     @Override
-    public void run(){
+    public final void run(){
         start();
-        waiting = false;
+
+        synchronized (lock){
+            lock.notify();
+        }
+
         if (properties.commands) {
-            Scanner s = new Scanner(System.in);
-            String nextLine;
-            while ((nextLine = s.nextLine())!=null){
-                String[] args = nextLine.split(" ");
-                switch (args[0].toLowerCase()) {
-                    case "quit" -> {
-                        stop();
-                        return;
-                    }
-
-                    case "restart" -> restart(Arrays.copyOfRange(args, 1, args.length));
-
-
-                    case "help" -> System.out.println(
-                        """
-                        commands available:
-                            'help' - list of commands
-                            'quit' - close the service
-                            'restart' <args> - restart this service with new config
-                        """
-                    );
-                }
-            }
+            startCommands();
         }
     }
 
@@ -122,7 +154,7 @@ public abstract class Service implements Runnable {
      * Restarts this instance of the server with new CLI arguments.
      * @param args CLI arguments
      */
-    protected void restart(String... args){
+    protected final void restart(String... args){
         stop();
         try {
             initialise(args);
@@ -140,11 +172,6 @@ public abstract class Service implements Runnable {
         Router.loadRoutes(this.getClass()).forEach(server::routes);
     }
 
-    /**
-     * <b>Override this method</b> to add extra configuration to the javalin server.
-     * @param config object of the javalin server
-     */
-    protected void customJavalinConfig(JavalinConfig config) {}
 
     /**
      * Creates the javalin server.
@@ -162,32 +189,58 @@ public abstract class Service implements Runnable {
      * Handles the CLI and properties file to configure the service
      * @param args CLI arguments
      * @return A properties class
-     * @throws IOException if am I/O error occurs
      */
-    private Properties initProperties(String... args) throws IOException {
-        return new Properties(this.getClass(), args);
+    private Properties initProperties(String... args) {
+        try {
+            return new Properties(this.getClass(), args);
+        } catch (IOException e){
+            System.err.println("File error has occurred. This is usually due to a missing config or resource file.");
+            System.err.println("Stacktrace: ");
+            e.printStackTrace();
+            System.exit(1);
+            return null;
+        }
     }
 
     /**
-     * <b>Override this method</b> for a custom JsonMapper
-     * <br/>
-     * Use GSON for serialisation instead of Jackson by default
-     * because GSON allows for serialisation of objects without noargs constructors.
-     *
-     * @return A JsonMapper for Javalin
+     * Starts the javalin server with the configured port.
      */
-    protected JsonMapper createJsonMapper() {
-        return new GSONMapper(this.getClass().getSimpleName());
+    private void start() {
+        server.start(properties.port);
     }
 
-    public String url() {
+    /**
+     * Stops the javalin server
+     */
+    public final void stop() {
+        server.stop();
+    }
+
+    /**
+     * This will initialise configure the service
+     */
+    public final Service initialise(String ... args){
+        properties = this.initProperties(args);
+        server = this.initHttpServer();
+
+        this.addRoutes();
+        this.customServiceInitialisation();
+
+        return this;
+    }
+
+    /**
+     * Gets the URL of this service. Currently, hard-coded to be the localHost.
+     * @return String that represents the URL to this service
+     */
+    public final String url() {
         return "http://localhost:" + properties.port;
     }
 
     /**
      * GSON serializer as a JsonMapper
      */
-    private static class GSONMapper implements JsonMapper {
+    private final static class GSONMapper implements JsonMapper {
         final GsonBuilder builder = new GsonBuilder();
         final Gson gson = builder.create();
         final Logger logger;

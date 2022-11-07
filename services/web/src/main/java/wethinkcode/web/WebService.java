@@ -2,8 +2,6 @@ package wethinkcode.web;
 
 import io.javalin.config.JavalinConfig;
 import wethinkcode.service.Service;
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 /**
  * I am the front-end web server for the LightSched project.
@@ -16,7 +14,7 @@ public class WebService extends Service
 {
     public static final WebService SERVICE = new WebService();
 
-    public static void main( String[] args) throws IOException, URISyntaxException {
+    public static void main( String[] args){
         SERVICE.initialise(args).activate("Web-Service");
     }
 

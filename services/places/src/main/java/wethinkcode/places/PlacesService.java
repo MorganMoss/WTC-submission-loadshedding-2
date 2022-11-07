@@ -41,35 +41,46 @@ public class PlacesService extends Service {
 
     public static final PlacesService SERVICE = new PlacesService();
 
-    public static void main(String... args) throws IOException, URISyntaxException {
-        SERVICE
-                .initialise(args)
-                .activate("Places-Service");
+    public static void main(String... args) {
+        SERVICE.initialise(args).activate("Places-Service");
     }
 
+    /**
+     * Should not be modified, I just prefer the look of SERVER.places vs SERVER.getPlaces()
+     */
     public Places places;
+
+    /**
+     * Adds the additional initialisation of an in-memory Database of
+     * places, municipalities and provinces.
+     */
     @Override
-    public Service initialise(String ... args) throws IOException, URISyntaxException {
-        super.initialise(args);
-        places = initPlacesDb();
-        return this;
+    protected void customServiceInitialisation() {
+        places = initPlacesDb(properties.get("data"));
     }
 
-    private Places initPlacesDb() throws URISyntaxException {
-
+    /**
+     * Creates an instance of the Places database.
+     * @param data_file the path to the data file
+     * @return the instance loaded with data from that file
+     */
+    static Places initPlacesDb(String data_file) {
         File databaseFile;
 
         try {
-            databaseFile = new File(Resources.getResource(properties.get("data")).toURI());
-        } catch (IllegalArgumentException e) {
-            databaseFile = new File(properties.get("data"));
+            databaseFile = new File(Resources.getResource(data_file).toURI());
+        } catch (IllegalArgumentException | URISyntaxException e) {
+            databaseFile = new File(data_file);
         }
-
-
+        
         try {
             return new PlacesCsvParser().parseCsvSource(databaseFile);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("File error has occurred. This is due to the data.csv file being broken or missing");
+            System.err.println("Stacktrace: ");
+            e.printStackTrace();
+            System.exit(1);
+            return null;
         }
     }
 }

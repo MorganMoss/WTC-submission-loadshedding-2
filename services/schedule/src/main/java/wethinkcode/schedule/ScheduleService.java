@@ -1,8 +1,5 @@
 package wethinkcode.schedule;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import io.javalin.json.JavalinJackson;
 import io.javalin.json.JsonMapper;
 import wethinkcode.service.Service;
@@ -16,20 +13,12 @@ public class ScheduleService extends Service
     public static final ScheduleService SERVICE = new ScheduleService();
 
 
-    public static void main( String[] args ) throws IOException, URISyntaxException {
-        SERVICE
-                .initialise()
-                .activate( "Schedule-Service");
+    public static void main( String[] args ) {
+        SERVICE.initialise(args).activate("Schedule-Service");
     }
 
     public String placeURL(){
-        return properties.get("places-url"); //"http://localhost:8001";
-    }
-
-    @Override
-    public Service initialise(String ... args) throws IOException, URISyntaxException {
-        super.initialise(args);
-        return this;
+        return properties.get("places-url");
     }
 
     /**
