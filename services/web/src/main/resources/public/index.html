@@ -12,14 +12,28 @@
             <p></p>
             <div id="app">
                 <form id="get-schedule">
-                    <label for="provinces"></label>
-                        <select id="provinces"></select>
-
-                    <label for="municipalities"></label>
-                        <select id="municipalities"></select>
-
-                    <label for="places"></label>
-                        <select id="places"></select>
+                <table>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <label for="provinces"></label>
+                            <select id="provinces" style="width: 300px" ></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                        <label for="municipalities"></label>
+                        <select id="municipalities" style="width: 300px"></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label for="places"></label>
+                            <select id="places" style="width: 300px"></select>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
                 </form>
 
                 <div id="content"></div>
@@ -34,7 +48,5 @@
         <script src="templates/error-template.js"></script>
 
         <script type="module" src="/scripts/routes.js"></script>
-
-
     </body>
 </html>

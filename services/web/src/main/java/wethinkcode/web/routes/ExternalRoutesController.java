@@ -14,33 +14,68 @@ public class ExternalRoutesController implements Route {
     @Override
     public EndpointGroup getEndPoints() {
         return () -> {
-            path("service/{service}", () -> get(this::getServiceURL));
             path("provinces",
-                    () -> get((context) -> forwardRoute(context, placesURL() + "/provinces")));
+                () -> get(
+                    (context) -> forwardRoute(
+                        context,
+                        placesURL()
+                            + "/provinces")
+                )
+            );
             path("municipalities/{province}",
-                    () -> get((context) -> forwardRoute(context, placesURL() + "/municipalities/" + context.pathParam("province"))));
+                () -> get(
+                    (context) -> forwardRoute(
+                        context,
+                        placesURL()
+                            + "/municipalities/"
+                            + context.pathParam("province")
+                    )
+                )
+            );
             path("places/municipality/{municipality}",
-                    () -> get((context) -> forwardRoute(context, placesURL() + "/places/municipality/" + context.pathParam("municipality"))));
+                () -> get(
+                    (context) -> forwardRoute(
+                            context,
+                            placesURL()
+                                + "/places/municipality/"
+                                + context.pathParam("municipality")
+                    )
+                )
+            );
+            path("schedule/{province}/{place}/{stage}",
+                () -> get(
+                    (context) -> forwardRoute(
+                            context,
+                            scheduleURL()
+                                + "/"
+                                + context.pathParam("province")
+                                + "/"
+                                + context.pathParam("place")
+                                + "/"
+                                + context.pathParam("stage"))
+                )
+            );
         };
     }
 
-    private void getServiceURL(Context context) {
-        String service = context.pathParam("service");
-        forwardRoute(context, SERVICE.properties.get("manager-url") + "/service/" + service);
+    private String getURL(String from){
+        String URL = Unirest.get(SERVICE.properties.get("manager-url") + "/service/" + from).asString().getBody();
+        return URL.replace("\"", "");
+    }
+
+    private String scheduleURL() {
+        return getURL("ScheduleService");
     }
 
     private String placesURL () {
-        String placesURL = Unirest.get(SERVICE.properties.get("manager-url") + "/service/PlacesService").asString().getBody();
-        System.out.println(placesURL);
-        return placesURL.replace("\"", "");
+        return getURL("PlacesService");
     }
 
-    private Context forwardRoute(Context context, String route){
+    private void forwardRoute(Context context, String route){
         GetRequest request = Unirest.get(route);
         HttpResponse<String> response = request.asString();
         context.result(response.getBody());
         context.status(response.getStatus());
-        return context;
     }
 
 
