@@ -7,6 +7,18 @@ const options = {
     method: 'GET'
 }
 
+function getStage() {
+    fetch("/stage", options)
+        .then(handleResponse)
+        .then(data => {
+            console.log(data)
+            stage =  data["stage"];
+            description = data["description"];
+            document.getElementById('stage').innerText = String(stage);
+            document.getElementById('description').innerText =description ;
+        })
+}
+
 function fillTable(data) {
     const schedule = document.getElementById("content");
     schedule.innerHTML = ""
@@ -51,9 +63,6 @@ function fillTable(data) {
 }
 
 function getSchedule(province, place){
-
-
-
     fetch('/schedule/' + province + '/' + place + "/" + stage , options )
         .then(handleResponse)
         .then(
@@ -129,51 +138,43 @@ function fillMunicipalities(province) {
     return null;
 }
 
+function fillProvinces(){
+    fetch(`/provinces`, options)
+        .then(handleResponse)
+        .then(data => {
+
+
+            const dropdown = $('#provinces');
+            dropdown.empty();
+
+            dropdown.append('<option selected="true" disabled>Choose Province</option>');
+            dropdown.prop('selectedIndex', 0);
+
+            $.each(data, function (i, option) {
+                console.log(option.name)
+                dropdown.append(
+                    $('<option/>')
+                        .attr("value", option.name)
+                        .text(option.name)
+                );
+            });
+
+            const province_select = document.getElementById('provinces');
+            province_select.addEventListener(
+                'change', event => fillMunicipalities(event.target.value)
+            );
+
+        });
+}
+
 /**
  * This will setup the navbar and the element for content.
  * It redirects to login if the id or email is null.
  */
 export function main() {
-fetch(`/provinces`, options)
-    .then(handleResponse)
-    .then(data => {
-
-
-        const dropdown = $('#provinces');
-        dropdown.empty();
-
-        dropdown.append('<option selected="true" disabled>Choose Province</option>');
-        dropdown.prop('selectedIndex', 0);
-
-        $.each(data, function (i, option) {
-            console.log(option.name)
-            dropdown.append(
-                $('<option/>')
-                    .attr("value", option.name)
-                    .text(option.name)
-            );
-        });
-
-        const province_select = document.getElementById('provinces');
-        province_select.addEventListener(
-            'change', event => fillMunicipalities(event.target.value)
-        );
-
-    });
-}
-
-function getStage() {
-    fetch("/stage", options)
-        .then(handleResponse)
-        .then(data => {
-            console.log(data)
-            stage =  data["stage"];
-            description = data["description"];
-            document.getElementById('stage').innerText = String(stage);
-            document.getElementById('description').innerText =description ;
-        })
+    getStage()
+    fillProvinces()
 }
 
 setInterval(getStage, 60000);
 
-getStage()
