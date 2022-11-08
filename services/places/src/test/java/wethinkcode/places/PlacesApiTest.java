@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import kong.unirest.HttpResponse;
+import kong.unirest.HttpStatus;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
@@ -91,6 +92,25 @@ public class PlacesApiTest
     public void getTownsInAProvince_noSuchProvinceInDb(){
         HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/place/Oregon" ).asJson();
         assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void placeExists(){
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/KwaZulu-Natal/Amatikulu").asJson();
+        assertEquals(HttpStatus.FOUND, response.getStatus());
+    }
+
+    @Test
+    public void placeNotExists(){
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/KwaZulu-Natal/MadeUp").asJson();
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatus());
+    }
+
+
+    @Test
+    public void provinceNotExists(){
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/MadeUp/Amatikulu").asJson();
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatus());
     }
 
 }

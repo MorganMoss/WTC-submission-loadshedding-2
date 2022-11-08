@@ -45,7 +45,7 @@ public abstract class Service implements Runnable {
     /**
      * The properties of this service, can hold any amount of custom data, use properties.get(< key >) to get it.
      */
-    protected Properties properties;
+    public Properties properties;
     /**
      * The javalin server used to host this service.
      */

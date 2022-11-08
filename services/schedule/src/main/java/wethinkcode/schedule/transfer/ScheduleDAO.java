@@ -17,15 +17,13 @@ public class ScheduleDAO {
         if (validateProvince(province)){
             return Optional.of( mockSchedule() );
         }
-
-//        Stage s = Stage.stageFromNumber(stage);
-
         return Optional.empty();
     }
 
     private static boolean validateProvince(String province) {
         JSONObject toMatch = new JSONObject(new Province(province));
 
+        System.out.println(SERVICE.placeURL());
         JSONArray provinces = Unirest
                 .get(SERVICE.placeURL() + "/provinces")
                 .asJson()

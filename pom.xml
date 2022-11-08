@@ -15,8 +15,7 @@
         <module>services/stage</module>
         <module>services/schedule</module>
         <module>services/web</module>
-
-        <module>service-manager</module>
+        <module>services/service-manager</module>
     </modules>
 
     <properties>

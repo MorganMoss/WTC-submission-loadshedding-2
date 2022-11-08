@@ -65,6 +65,7 @@ public class PlaceController implements Route {
                 .noneMatch(p -> p.name().equals(province))
         ) {
             context.status(HttpStatus.NOT_FOUND);
+            context.json("Province does not exist: " + province);
             return;
         }
 
@@ -76,7 +77,7 @@ public class PlaceController implements Route {
                 .noneMatch(p -> p.name().equals(place))
         ) {
             context.status(HttpStatus.NOT_FOUND);
-            context.json("Place does not exist in province : " + province);
+            context.json("Place does not exist in province: " + province);
             return;
         }
 
@@ -94,7 +95,7 @@ public class PlaceController implements Route {
                 path("province/{province}", () -> get(this::getPlacesInProvince));
                 path("municipality/{municipality}", () -> get(this::getPlacesInMunicipality));
             });
-            path("{province}/{place}", () -> get(this::placeExists));
+            path("exists/{province}/{place}", () -> get(this::placeExists));
         };
     }
 

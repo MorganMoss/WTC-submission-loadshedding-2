@@ -16,7 +16,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
 
 @SuppressWarnings("unused")
-public class ServiceController implements Route {
+public class ScheduleController implements Route {
     @NotNull
     @Override
     public EndpointGroup getEndPoints() {

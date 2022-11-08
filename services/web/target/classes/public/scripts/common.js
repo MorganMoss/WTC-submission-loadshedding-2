@@ -1,5 +1,3 @@
-import {mainURL} from "./routes.js";
-
 /**
  * This will render a page
  * @param data that will populate the Handlebar variables
@@ -18,9 +16,6 @@ export function navigateTo(URL){
 
 }
 
-export function goToMain(){
-    navigateTo(mainURL);
-}
 
 
 /**
@@ -32,12 +27,18 @@ export function goToMain(){
  */
 export function handleResponse(response){
     return new Promise(function(accept, reject) {
-        if (response.ok) {
+        if (response.status < 400) {
+            console.log("SUCCESS")
+
             accept(response.json());
         } else {
             if (reject === null){
+                console.log("ERROR")
+
                 error(response, "app");
             } else {
+                console.log("CUSTOM ERROR")
+
                 reject(response);
             }
         }

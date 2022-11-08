@@ -1,7 +1,6 @@
 import {main} from "./main.js";
 import {notFound} from "./not-found.js";
 
-export const mainURL = 'main';
 
 /**
  * Sets up all the routing for the webapp.
@@ -15,8 +14,6 @@ function setupRoutes(){
             root:'index.html',
             page404: notFound
         });
-
-        router.add(mainURL, main, {});
 
         router.addUriListener();
 
@@ -33,3 +30,4 @@ function setupRoutes(){
 }
 
 setupRoutes();
+main();

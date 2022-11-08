@@ -27,7 +27,7 @@ public class MunicipalityController implements Route {
 
         if (municipality.isPresent()){
             ctx.json(municipality.get());
-            ctx.status(HttpStatus.FOUND);
+            ctx.status(HttpStatus.OK);
         } else {
             ctx.status(HttpStatus.NOT_FOUND);
         }
@@ -39,7 +39,7 @@ public class MunicipalityController implements Route {
 
         if (municipalities.size()>0){
             ctx.json(municipalities);
-            ctx.status(HttpStatus.FOUND);
+            ctx.status(HttpStatus.OK);
         } else {
             ctx.status(HttpStatus.NOT_FOUND);
         }

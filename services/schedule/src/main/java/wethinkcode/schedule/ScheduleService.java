@@ -2,6 +2,7 @@ package wethinkcode.schedule;
 
 import io.javalin.json.JavalinJackson;
 import io.javalin.json.JsonMapper;
+import kong.unirest.Unirest;
 import wethinkcode.service.Service;
 
 /**
@@ -12,13 +13,16 @@ public class ScheduleService extends Service
 {
     public static final ScheduleService SERVICE = new ScheduleService();
 
-
     public static void main( String[] args ) {
         SERVICE.initialise(args).activate("Schedule-Service");
     }
 
     public String placeURL(){
-        return properties.get("places-url");
+        try {
+            return Unirest.get(properties.get("manager-url") + "/service/PlacesService").asObject(String.class).getBody();
+        } catch (RuntimeException e){
+            return properties.get("places-url");
+        }
     }
 
     /**
