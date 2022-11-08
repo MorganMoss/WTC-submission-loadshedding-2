@@ -96,20 +96,20 @@ public class PlacesApiTest
 
     @Test
     public void placeExists(){
-        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/KwaZulu-Natal/Amatikulu").asJson();
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/exists/KwaZulu-Natal/Amatikulu").asJson();
         assertEquals(HttpStatus.FOUND, response.getStatus());
     }
 
     @Test
     public void placeNotExists(){
-        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/KwaZulu-Natal/MadeUp").asJson();
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/exists/KwaZulu-Natal/MadeUp").asJson();
         assertEquals(HttpStatus.NOT_FOUND, response.getStatus());
     }
 
 
     @Test
     public void provinceNotExists(){
-        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "exists/MadeUp/Amatikulu").asJson();
+        HttpResponse<JsonNode> response = Unirest.get( SERVICE.url() + "/exists/MadeUp/Amatikulu").asJson();
         assertEquals(HttpStatus.NOT_FOUND, response.getStatus());
     }
 

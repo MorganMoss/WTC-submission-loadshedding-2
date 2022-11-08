@@ -55,12 +55,25 @@ public class ExternalRoutesController implements Route {
                                 + context.pathParam("stage"))
                 )
             );
+            path("stage",
+                    () -> get(
+                            (context) -> forwardRoute(
+                                    context,
+                                    stageURL()
+                                            + "/stage"
+                            )
+                    )
+            );
         };
     }
 
     private String getURL(String from){
         String URL = Unirest.get(SERVICE.properties.get("manager-url") + "/service/" + from).asString().getBody();
         return URL.replace("\"", "");
+    }
+
+    private String stageURL() {
+        return getURL("StageService");
     }
 
     private String scheduleURL() {
