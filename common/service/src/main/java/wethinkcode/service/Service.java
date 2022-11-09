@@ -1,104 +1,120 @@
 package wethinkcode.service;
 
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
-import org.jetbrains.annotations.NotNull;
+import picocli.CommandLine;
 import wethinkcode.router.Router;
 
-import java.io.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 import java.util.Scanner;
-import java.util.logging.Logger;
 
-import static wethinkcode.logger.Logger.formatted;
+import static wethinkcode.service.Checks.*;
+import static wethinkcode.service.Properties.populateFields;
 
-
-/**
- * <p>
- * <b>Generic Javalin Based Service</b>
- * </p>
- * <p>
- * This can be extended to make Services
- * </p>
- * <br/>
- * <p>
- * <b>Vital to have a routes package as a child to the package of the child service.</b>
- * </p>
- * <p>
- * That is where you implement Route Classes to be loaded into the service.
- * Override the initialise method for when you initialise data specific to the child service.
- * </p>
- * <br/>
- * <p>
- * <b>Vital to have a default.properties file in resources</b>
- * </p>
- * <p>
- * The .properties file holds any nonstandard configuration data, and the port
- * There is a CLI argument to choose an alternate config file.
- * </p>
- */
-public abstract class Service implements Runnable {
+public class Service<E> extends Thread {
     /**
-     * The properties of this service, can hold any amount of custom data, use properties.get(< key >) to get it.
+     * The class annotated as a service
      */
-    public Properties properties;
+    public final E service;
     /**
      * The javalin server used to host this service.
      */
     private Javalin server;
     /**
+     * Port for the service
+     */
+    @CommandLine.Option(
+            names = {"--port", "-p"},
+            description = "The name of a directory where CSV datafiles may be found. This option overrides and data-directory setting in a configuration file.",
+            type = Integer.class
+    )
+    public Integer port = 0;
+
+    /**
+     * Commands enables/disables
+     */
+    @CommandLine.Option(
+            names = {"--commands", "-o"},
+            description = "Enables or Disables Commands during runtime from sys.in",
+            type = Boolean.class
+    )
+    Boolean commands = false;
+
+
+    @CommandLine.Option(
+            names = {"--domain", "-dom"},
+            description = "The host name of the server"
+    )
+    String domain = "http://localhost";
+
+    /**
      * Used for waiting
      */
     private final Object lock = new Object();
+    private boolean started = false;
+    private boolean stopped = false;
 
-    /**
-     * <b>Override this method</b> for a custom JsonMapper
-     * <br/>
-     * Use GSON for serialisation instead of Jackson by default
-     * because GSON allows for serialisation of objects without noargs constructors.
-     *
-     * @return A JsonMapper for Javalin
-     */
-    protected JsonMapper createJsonMapper() {
-        return new GSONMapper(this.getClass().getSimpleName());
+    public Service(E service){
+        checkClassAnnotation(service.getClass());
+        this.service = service;
     }
 
-
     /**
-     * <b>Override this method</b> to add extra initialization to the javalin server.
-     * <br/>
-     * Runs after the properties, server and routes have been initialized.
+     * Run this method to create a new service from a class you have annotated with @AsService.
+     * <br/><br/>
+     * Use picocli's @CommandLine.Option for custom fields to have them instantiated by the Properties of this service
+     * @return A Service object with an instance of your class.
      */
-    protected void customServiceInitialisation() {}
+    public Service<E> execute(String ... args){
+        Method[] methods = service.getClass().getMethods();
+        initProperties(args);
+        initHttpServer(methods);
+        handleInitMethods(methods);
+        activate();
+        return this;
+    }
 
-    /**
-     * <b>Override this method</b> to add extra configuration to the javalin server.
-     * @param config object of the javalin server
-     */
-    protected void customJavalinConfig(JavalinConfig config) {}
+    public void close(){
+        if (stopped){
+            throw new AlreadyStoppedException("This service is designed to be stopped once");
+        }
+        stopped = true;
+        server.stop();
+    }
+
+    @Override
+    public void run() {
+        if (started){
+            throw new AlreadyStartedException("This service is designed to be run once");
+        }
+        started = true;
+        server.start(port);
+
+        synchronized (lock){
+            lock.notify();
+        }
+
+        if (commands) {
+            startCommands();
+        }
+    }
 
     /**
      * Takes a service and runs it in a separate thread.
-     * @param name of that services thread
      */
     @SuppressWarnings("SleepWhileHoldingLock")
-    public final void activate(String name){
-        if (properties == null || server == null){
-            System.err.println("Service not initialised. Probably did not call initialize()");
-            return;
-        }
-
-        Thread thread = new Thread(this);
-        thread.setName(name);
-        thread.start();
+    private void activate(){
+        this.setName(this.service.getClass().getSimpleName());
+        this.start();
 
         try {
             synchronized (lock){
@@ -119,180 +135,229 @@ public abstract class Service implements Runnable {
             String[] args = nextLine.split(" ");
             switch (args[0].toLowerCase()) {
                 case "quit" -> {
-                    stop();
+                    close();
+                    System.exit(0);
                     return;
                 }
-
-                case "restart" -> restart(Arrays.copyOfRange(args, 1, args.length));
-
 
                 case "help" -> System.out.println(
                         """
                                 commands available:
                                     'help' - list of commands
                                     'quit' - close the service
-                                    'restart' <args> - restart this service with new config
                                 """
                 );
             }
         }
     }
 
-    /**
-     * Starts server and optionally live commands from sys.in
-     */
-    @Override
-    public final void run(){
-        start();
+    private void handleCustomJavalinConfigs(Method[] methods, JavalinConfig javalinConfig) {
+        Arrays
+                .stream(methods)
+                .filter(method -> method.isAnnotationPresent(CustomJavalinConfig.class))
+                .forEach(method -> handleCustomJavalinConfig(method, javalinConfig));
+    }
 
-        synchronized (lock){
-            lock.notify();
+    private void handleCustomJavalinConfig(Method method, JavalinConfig javalinConfig) {
+        checkHasJavalinConfigAsArg(method);
+        try {
+            method.invoke(service, javalinConfig);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private JsonMapper handleCustomJSONMapper(Method[] methods){
+        List<Method> mapper = Arrays
+                .stream(methods)
+                .filter(method -> method.isAnnotationPresent(CustomJSONMapper.class))
+                .toList();
+
+        if (mapper.size() > 1){
+            throw new MultipleJSONMapperMethodsException(service.getClass().getSimpleName() + " has more than one custom JSON Mapper");
         }
 
-        if (properties.commands) {
-            startCommands();
+        if (mapper.isEmpty()){
+            return createJsonMapper();
+        }
+
+        Method method = mapper.get(0);
+        checkForNoArgs(method);
+        checkHasReturnType(method, JsonMapper.class);
+        try {
+            return (JsonMapper) method.invoke(service);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * Restarts this instance of the server with new CLI arguments.
+     * Use GSON for serialisation instead of Jackson by default
+     * because GSON allows for serialisation of objects without noargs constructors.
+     *
+     * @return A JsonMapper for Javalin
+     */
+    private JsonMapper createJsonMapper() {
+        return new GSONMapper(this.getClass().getSimpleName());
+    }
+
+    private void handleInitMethods(Method[] methods){
+        Arrays
+                .stream(methods)
+                .filter(method -> method.isAnnotationPresent(RunOnServiceInitialisation.class))
+                .forEach(this::handleInitMethod);
+    }
+
+    private void handleInitMethod(Method method){
+        checkForNoArgs(method);
+        try {
+            method.invoke(service);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * Handles the CLI and properties file to configure the service
+     *
      * @param args CLI arguments
      */
-    protected final void restart(String... args){
-        stop();
-        try {
-            initialise(args);
-        } catch (Exception e) {
-            System.out.println("Failed to restart, please try again.");
-            return;
-        }
-        start();
+    private void initProperties(String... args) {
+        populateFields(this, service, args);
     }
 
     /**
      * Gets the routes from the routes package in the given services package
      */
     private void addRoutes(){
-        Router.loadRoutes(this.getClass()).forEach(server::routes);
+        Router.loadRoutes(service.getClass()).forEach(server::routes);
     }
 
 
     /**
      * Creates the javalin server.
      * By default, this just loads the JsonMapper from createJsonMapper
-     * @return the Javalin server object.
      */
-    private Javalin initHttpServer() {
-        return Javalin.create(javalinConfig -> {
-            customJavalinConfig(javalinConfig);
-            javalinConfig.jsonMapper(createJsonMapper());
-        });
-    }
-
-    /**
-     * Handles the CLI and properties file to configure the service
-     * @param args CLI arguments
-     * @return A properties class
-     */
-    private Properties initProperties(String... args) {
-        try {
-            return new Properties(this, args);
-        } catch (IOException e){
-            System.err.println("File error has occurred. This is usually due to a missing config or resource file.");
-            System.err.println("Stacktrace: ");
-            e.printStackTrace();
-            System.exit(1);
-            return null;
-        }
-    }
-
-    /**
-     * Loads default properties as an inputStream
-     */
-    public InputStream getDefaultPropertiesStream(){
-        InputStream content;
-        try {
-            Path path = Path.of(new File(
-                    this.getClass()
-                            .getProtectionDomain()
-                            .getCodeSource()
-                            .getLocation().toURI()
-
-            ).getPath()).resolve("default.properties");
-            content = new FileInputStream(path.toFile());
-            Objects.requireNonNull(content);
-        } catch (NullPointerException | FileNotFoundException | URISyntaxException e){
-            content = Service.class.getResourceAsStream("/default.properties");
-        }
-
-        Objects.requireNonNull(content);
-
-        return content;
-    }
-
-    /**
-     * Starts the javalin server with the configured port.
-     */
-    private void start() {
-        server.start(properties.port);
-    }
-
-    /**
-     * Stops the javalin server
-     */
-    public final void stop() {
-        server.stop();
-    }
-
-    /**
-     * This will initialise configure the service
-     */
-    public final Service initialise(String ... args){
-        properties = this.initProperties(args);
-        server = this.initHttpServer();
+    private void initHttpServer(Method[] methods) {
+        server = Javalin.create(
+            javalinConfig -> {
+                handleCustomJavalinConfigs(methods, javalinConfig);
+                javalinConfig.jsonMapper(handleCustomJSONMapper(methods));
+            }
+        );
 
         this.addRoutes();
-        this.customServiceInitialisation();
+    }
 
-        return this;
+    public String url() {
+        return domain + ":" + port;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public @interface AsService {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface CustomJavalinConfig {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface CustomJSONMapper {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface RunOnServiceInitialisation {}
+}
+
+/**
+ * Contains All the Special Checks that throw exceptions during execution of a service
+ */
+class Checks {
+    static void checkForNoArgs(Method method){
+        if (method.getGenericParameterTypes().length != 0) {
+            throw new MethodTakesNoArgumentsException(method.getName() + " must have no arguments");
+        }
     }
 
     /**
-     * Gets the URL of this service. Currently, hard-coded to be the localHost.
-     * @return String that represents the URL to this service
+     * Checks if a method has the correct return type.
+     * @param method checked
+     * @param type the method should return
+     * @throws BadReturnTypeException if not correct
      */
-    public final String url() {
-        return "http://localhost:" + properties.port;
+    static void checkHasReturnType(Method method, Class<?> type) {
+        if (!method.getReturnType().equals(type)){
+            throw new BadReturnTypeException(
+                    method.getName() + " has a bad return type. \n"
+                            + "Expected: " +  type.getTypeName() + "\n"
+                            + "Actual: " + method.getReturnType().getSimpleName()
+            );
+        }
     }
 
-    /**
-     * GSON serializer as a JsonMapper
-     */
-    private final static class GSONMapper implements JsonMapper {
-        final GsonBuilder builder = new GsonBuilder();
-        final Gson gson = builder.create();
-        final Logger logger;
-
-        GSONMapper(String serviceName) {
-            this.logger = formatted(this.getClass().getSimpleName() + " " + serviceName);
+    static void checkClassAnnotation(Class<?> clazz){
+        if (!clazz.isAnnotationPresent(Service.AsService.class)){
+            throw new NotAServiceException(
+                    clazz.getSimpleName() + " is not an Annotated with @AsService"
+            );
         }
+    }
 
-        @NotNull
-        @Override
-        public String toJsonString(@NotNull Object obj, @NotNull Type type) {
-            logger.info("To JSON: " + obj + " of type " + type.getTypeName());
-            String result = gson.toJson(obj);
-            logger.info("Result: " + result);
-            return result;
+    static void checkHasJavalinConfigAsArg(Method method){
+        Type[] params = method.getGenericParameterTypes();
+        if (params.length != 1){
+            throw new NoJavalinConfigArgumentException(
+                    method.getName() + " has no Parameters");
         }
-
-        @NotNull
-        @Override
-        public <T> T fromJsonString(@NotNull String json, @NotNull Type targetType) {
-            logger.info("From JSON : " + json + " to type " + targetType.getTypeName());
-            T result = gson.fromJson(json, targetType);
-            logger.info("Result: " + result.toString());
-            return result;
+        if (!params[0].equals(JavalinConfig.class)){
+            throw new NoJavalinConfigArgumentException(
+                    method.getName() + " must have JavalinConfig as it's single parameter");
         }
     }
 }
+
+class NotAServiceException extends RuntimeException {
+    public NotAServiceException(String message){
+        super(message);
+    }
+}
+
+class MultipleJSONMapperMethodsException extends RuntimeException {
+    public MultipleJSONMapperMethodsException(String message){
+        super(message);
+    }
+}
+
+class MethodTakesNoArgumentsException extends RuntimeException {
+    public MethodTakesNoArgumentsException(String message){
+        super(message);
+    }
+}
+
+class NoJavalinConfigArgumentException extends RuntimeException {
+    public NoJavalinConfigArgumentException(String message){
+        super(message);
+    }
+}
+
+class BadReturnTypeException extends RuntimeException {
+    public BadReturnTypeException(String message){
+        super(message);
+    }
+}
+
+class AlreadyStartedException extends RuntimeException {
+    public AlreadyStartedException(String message){
+        super(message);
+    }
+}
+class AlreadyStoppedException extends RuntimeException {
+    public AlreadyStoppedException(String message){
+        super(message);
+    }
+}
+
+
+

@@ -1,16 +1,15 @@
 package wethinkcode.places;
 
-
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-
+import picocli.CommandLine;
 import wethinkcode.service.Service;
 
 
 /**
- * I provide a Province-names Service for places in South Africa.
+ * I provide a Province-names Service_OLD for places in South Africa.
  * <p>
  * I read place-name data from a CSV file that I read and
  * parse into the objects (domain model) that I use,
@@ -36,27 +35,34 @@ import wethinkcode.service.Service;
  *      <em>overrides</em> any value in a configuration file and will bypass any
  *      data-directory set via command-line or configuration.
  */
+@Service.AsService
+public class PlacesService {
 
-public class PlacesService extends Service {
-
-    public static final PlacesService SERVICE = new PlacesService();
-
-    public static void main(String... args) {
-        SERVICE.initialise(args).activate("Places-Service");
-    }
-
+    public static final PlacesService PLACES_SERVICE = new PlacesService();
+    /**
+     * Contains the path to the csv file full of places data
+     */
+    @CommandLine.Option(
+            names = {"-d", "--data"},
+            description = "The path to the csv data file used by this service"
+    )
+    public String data;
     /**
      * Should not be modified, I just prefer the look of SERVER.places vs SERVER.getPlaces()
      */
-    public Places places;
+    public static Places places;
+
+    public static void main(String... args) {
+        new Service<>(PLACES_SERVICE).execute(args);
+    }
 
     /**
      * Adds the additional initialisation of an in-memory Database of
      * places, municipalities and provinces.
      */
-    @Override
-    protected void customServiceInitialisation() {
-        places = initPlacesDb(properties.get("data"));
+    @Service.RunOnServiceInitialisation
+    public void createPlaces() {
+        places = initPlacesDb(data);
     }
 
     /**

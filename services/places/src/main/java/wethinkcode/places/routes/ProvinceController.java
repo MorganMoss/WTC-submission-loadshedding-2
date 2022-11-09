@@ -10,7 +10,7 @@ import java.util.Collection;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
-import static wethinkcode.places.PlacesService.SERVICE;
+import static wethinkcode.places.PlacesService.places;
 
 
 import wethinkcode.router.Route;
@@ -21,7 +21,7 @@ public class ProvinceController implements Route {
      * Gets a municipality by name
      */
     void getAllProvinces(Context ctx){
-        Collection<Province> provinces = SERVICE.places.provinces();
+        Collection<Province> provinces = places.provinces();
 
             ctx.json(provinces);
             ctx.status(HttpStatus.OK);

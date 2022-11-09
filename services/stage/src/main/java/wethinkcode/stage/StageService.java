@@ -4,19 +4,19 @@ import wethinkcode.model.Stage;
 import wethinkcode.service.Service;
 
 /**
- * I provide a Stages Service for South Africa.
+ * I provide a Stages Service_OLD for South Africa.
  */
-public class StageService extends Service {
-
+@Service.AsService
+ public class StageService{
     public static final StageService SERVICE = new StageService();
+    public static Stage stage;
 
     public static void main(String ... args){
-       SERVICE.initialise(args).activate("Stage-Service");
+       new Service<>(SERVICE).execute(args);
     }
 
-    public Stage stage;
 
-    @Override
+    @Service.RunOnServiceInitialisation
     protected void customServiceInitialisation() {
         stage = Stage.STAGE0;
     }

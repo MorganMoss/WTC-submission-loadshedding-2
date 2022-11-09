@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
-
-import static wethinkcode.places.PlacesService.SERVICE;
+import static wethinkcode.places.PlacesService.places;
 
 import wethinkcode.router.Route;
 
@@ -23,7 +22,7 @@ public class PlaceController implements Route {
      */
     void getPlace(Context ctx){
         String name = ctx.pathParam("name");
-        Optional<Place> place = SERVICE.places.place(name);
+        Optional<Place> place = places.place(name);
 
         if (place.isPresent()){
             ctx.json(place.get());
@@ -35,10 +34,10 @@ public class PlaceController implements Route {
 
     void getPlacesInProvince(Context ctx){
         String province = ctx.pathParam("province");
-        List<Place> places = SERVICE.places.placesInProvince(province);
+        List<Place> placeList = places.placesInProvince(province);
 
-        if (places.size()>0){
-            ctx.json(places);
+        if (placeList.size()>0){
+            ctx.json(placeList);
             ctx.status(HttpStatus.FOUND);
         } else {
             ctx.status(HttpStatus.NOT_FOUND);
@@ -47,10 +46,10 @@ public class PlaceController implements Route {
 
     void getPlacesInMunicipality(Context ctx){
         String municipality = ctx.pathParam("municipality");
-        List<Place> places = SERVICE.places.placesInMunicipality(municipality);
+        List<Place> placesList = places.placesInMunicipality(municipality);
 
-        if (places.size()>0){
-            ctx.json(places);
+        if (placesList.size()>0){
+            ctx.json(placesList);
             ctx.status(HttpStatus.FOUND);
         } else {
             ctx.status(HttpStatus.NOT_FOUND);
@@ -59,7 +58,7 @@ public class PlaceController implements Route {
 
     private void placeExists(Context context) {
         String province = context.pathParam("province");
-        if (SERVICE.places
+        if (places
                 .provinces()
                 .stream()
                 .noneMatch(p -> p.name().equals(province))
@@ -71,7 +70,7 @@ public class PlaceController implements Route {
 
         String place = context.pathParam("place");
 
-        if (SERVICE.places
+        if (places
                 .placesInProvince(province)
                 .stream()
                 .noneMatch(p -> p.name().equals(place))

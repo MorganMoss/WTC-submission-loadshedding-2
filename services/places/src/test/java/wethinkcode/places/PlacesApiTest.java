@@ -13,9 +13,10 @@ import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import org.junit.jupiter.api.*;
 import wethinkcode.model.Place;
+import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static wethinkcode.places.PlacesService.SERVICE;
+import static wethinkcode.places.PlacesService.PLACES_SERVICE;
 
 /**
  * *Functional* tests of the PlacesService.
@@ -23,6 +24,7 @@ import static wethinkcode.places.PlacesService.SERVICE;
 public class PlacesApiTest
 {
     public static final int TEST_PORT = 7377;
+    private static Service<PlacesService> SERVICE;
 
 
     @BeforeAll
@@ -50,16 +52,15 @@ public class PlacesApiTest
             properties.deleteOnExit();
         }
 
-        SERVICE
-            .initialise("-p="+TEST_PORT, "-c="+properties.getAbsolutePath())
-            .activate("Test-Places-Service");
+        SERVICE = new Service<>(PLACES_SERVICE)
+                .execute("-p="+TEST_PORT, "-c="+properties.getAbsolutePath());
 
 
     }
 
     @AfterAll
     public static void stopServer(){
-        SERVICE.stop();
+        SERVICE.close();
     }
 
     @Test

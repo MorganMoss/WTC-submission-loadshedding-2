@@ -3,7 +3,6 @@ package wethinkcode.schedule;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,6 +13,7 @@ import kong.unirest.Unirest;
 import org.junit.jupiter.api.*;
 import wethinkcode.model.Schedule;
 import wethinkcode.places.PlacesService;
+import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static wethinkcode.schedule.ScheduleService.SERVICE;
@@ -27,6 +27,9 @@ public class ScheduleServiceAPITest
 {
     public static final int TEST_PORT = 8876;
 
+    private static Service<PlacesService> places;
+    private static Service<ScheduleService> schedule;
+
     @BeforeAll
     public static void initJsonMapper(){
         final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -38,33 +41,30 @@ public class ScheduleServiceAPITest
 
     @BeforeAll
     public static void initTestScheduleFixture() throws IOException {
-        PlacesService.SERVICE
-                .initialise("-o=false", "-p=3221")
-                .activate("Places Service");
+        places = new Service<>(new PlacesService())
+                .execute("-o=false", "-p=3221");
 
         File config = new File("test-api.properties");
         config.deleteOnExit();
         if (config.createNewFile()){
             try(FileWriter r = new FileWriter(config)) {
-                r.write("places-url=http://localhost:3221");
+                r.write("placesURL=http://localhost:3221");
             }
         }
 
-        SERVICE
-                .initialise("-p=" + TEST_PORT, "-c="+config.getAbsolutePath())
-                .activate("Test Schedule Service");
+        schedule = new Service<>(SERVICE).execute("-p=" + TEST_PORT, "-c="+config.getAbsolutePath());
     }
 
     @AfterAll
     public static void destroyTestFixture(){
-        PlacesService.SERVICE.stop();
-        SERVICE.stop();
+        places.close();
+        schedule.close();
     }
 
     @Test
     public void getSchedule_someTown(){
         HttpResponse<Schedule> response = Unirest
-            .get(SERVICE.url() + "/Eastern%20Cape/Gqeberha/4" )
+            .get(schedule.url() + "/Eastern%20Cape/Gqeberha/4" )
             .asObject( Schedule.class );
         assertEquals( HttpStatus.OK, response.getStatus());
 
@@ -76,7 +76,7 @@ public class ScheduleServiceAPITest
     @Test
     public void getSchedule_nonexistentTown(){
         HttpResponse<Schedule> response = Unirest
-            .get(SERVICE.url() + "/Mars/Elonsburg/4" )
+            .get(schedule.url() + "/Mars/Elonsburg/4" )
             .asObject( Schedule.class );
         assertEquals( HttpStatus.NOT_FOUND, response.getStatus() );
         assertEquals( 0, response.getBody().numberOfDays() );
@@ -85,7 +85,7 @@ public class ScheduleServiceAPITest
     @Test
     public void illegalStage(){
         HttpResponse<Schedule> response = Unirest
-            .get(SERVICE.url() + "/Western%20Cape/Knysna/42" )
+            .get(schedule.url() + "/Western%20Cape/Knysna/42" )
             .asObject( Schedule.class );
         assertEquals( HttpStatus.BAD_REQUEST, response.getStatus() );
     }

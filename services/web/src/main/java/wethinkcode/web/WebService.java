@@ -1,6 +1,7 @@
 package wethinkcode.web;
 
 import io.javalin.config.JavalinConfig;
+import picocli.CommandLine;
 import wethinkcode.service.Service;
 
 /**
@@ -10,15 +11,21 @@ import wethinkcode.service.Service;
  * server, more in the way it communicates and interacts with the back-end
  * services.
  */
-public class WebService extends Service
-{
+@Service.AsService
+public class WebService{
     public static final WebService SERVICE = new WebService();
+    @CommandLine.Option(
+            names = {"-m", "--manager"},
+            description = {"The URL of the manager service."},
+            required = true
+    )
+    public String managerURL;
 
     public static void main( String[] args){
-        SERVICE.initialise(args).activate("Web-Service");
+        new Service<>(SERVICE).execute(args);
     }
 
-    @Override
+    @Service.CustomJavalinConfig
     protected void customJavalinConfig(JavalinConfig config) {
         config.staticFiles.add("/public");
     }

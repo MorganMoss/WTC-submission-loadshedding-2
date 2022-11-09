@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 import static java.lang.Math.round;
-import static wethinkcode.stage.StageService.SERVICE;
+import static wethinkcode.stage.StageService.stage;
 
 @SuppressWarnings("unused")
 public class StageController implements Route {
@@ -25,17 +25,17 @@ public class StageController implements Route {
      * Gets a place by name
      */
     void getStage(Context ctx){
-        ctx.json(SERVICE.stage.json());
+        ctx.json(stage.json());
         ctx.status(HttpStatus.OK);
     }
 
-    void setStage(int stage) throws BadStageException {
-        SERVICE.stage = Stage.stageFromNumber(stage);
+    void setStage(int stageNumber) throws BadStageException {
+        stage = Stage.stageFromNumber(stageNumber);
     }
 
-    void setStage(Stage stage) throws NullPointerException{
-        Objects.requireNonNull(stage);
-        SERVICE.stage = stage;
+    void setStage(Stage stageObj) throws NullPointerException{
+        Objects.requireNonNull(stageObj);
+        stage = stageObj;
     }
 
     void setStageLegacy(Context ctx){

@@ -13,20 +13,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 
+import static wethinkcode.service.Properties.getDefaultPropertiesStream;
 
-public class ManagerService extends Service{
-    public static final ManagerService SERVICE = new ManagerService();
-    static final ArrayList<Service> services = new ArrayList<>(){{
-        add(PlacesService.SERVICE);
-        add(StageService.SERVICE);
-        add(ScheduleService.SERVICE);
-        add(WebService.SERVICE);
+@Service.AsService
+public class ManagerService {
+    private static final ArrayList<Object> services = new ArrayList<>(){{
+        add(new PlacesService());
+        add(new StageService());
+        add(new ScheduleService());
+        add(new WebService());
     }};
+    public static final ManagerService MANAGER_SERVICE = new ManagerService();
+    private static final Service<ManagerService> SERVICE = new Service<>(MANAGER_SERVICE);
+    public final HashMap<Integer, Service<Object>> ports = new HashMap<>();
+    public int port;
 
-    public final HashMap<Integer, Service> ports = new HashMap<>();
     private void addToProperties(Properties properties) {
-        properties.setProperty("manager-url", this.url() );
-        properties.setProperty("port", String.valueOf(this.properties.port + ports.size() + 1));
+        properties.setProperty("manager", SERVICE.url() );
+        properties.setProperty("port", String.valueOf(port + ports.size() + 1));
         properties.setProperty("commands", "false");
     }
 
@@ -41,6 +45,7 @@ public class ManagerService extends Service{
         }
     }
 
+    @Service.RunOnServiceInitialisation
     public void startAllServices(){
         Path folder;
         try {
@@ -51,21 +56,16 @@ public class ManagerService extends Service{
             throw new RuntimeException(e);
         }
 
-        for (Service service : services){
+        for (Object service : services){
             File f =new File(folder.resolve(service.getClass().getSimpleName() + ".properties").toUri());
 
-            setUpProperties(f, service.getDefaultPropertiesStream());
+            setUpProperties(f, getDefaultPropertiesStream(service.getClass()));
 
-            service
-                .initialise("-c="+f.getAbsolutePath())
-                .activate(service.getClass().getSimpleName());
-
-            ports.put(this.properties.port + ports.size() + 10, service);
+            ports.put(this.port + ports.size() + 10, new Service<>(service).execute("-c="+f.getAbsolutePath()));
         }
     }
 
     public static void main(String[] args) {
-        SERVICE.initialise(args).activate("Service-Manager");
-        SERVICE.startAllServices();
+        MANAGER_SERVICE.port = new Service<>(MANAGER_SERVICE).execute(args).port;
     }
 }

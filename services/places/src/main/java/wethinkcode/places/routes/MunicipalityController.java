@@ -12,7 +12,7 @@ import java.util.Optional;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
 
-import static wethinkcode.places.PlacesService.SERVICE;
+import static wethinkcode.places.PlacesService.places;
 
 import wethinkcode.router.Route;
 
@@ -23,7 +23,7 @@ public class MunicipalityController implements Route {
      */
     void getMunicipality(Context ctx){
         String name = ctx.pathParam("name");
-        Optional<Municipality> municipality = SERVICE.places.municipality(name);
+        Optional<Municipality> municipality = places.municipality(name);
 
         if (municipality.isPresent()){
             ctx.json(municipality.get());
@@ -35,7 +35,7 @@ public class MunicipalityController implements Route {
 
     void getMunicipalitiesInProvince(Context ctx){
         String province = ctx.pathParam("province");
-        List<Municipality> municipalities = SERVICE.places.municipalitiesIn(province);
+        List<Municipality> municipalities = places.municipalitiesIn(province);
 
         if (municipalities.size()>0){
             ctx.json(municipalities);

@@ -1,8 +1,5 @@
 package wethinkcode.stage;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import kong.unirest.HttpResponse;
 import kong.unirest.HttpStatus;
 import kong.unirest.JsonNode;
@@ -11,12 +8,13 @@ import kong.unirest.json.JSONException;
 import org.junit.jupiter.api.*;
 import wethinkcode.BadStageException;
 import wethinkcode.model.Stage;
+import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static wethinkcode.stage.StageService.SERVICE;
 
 /**
- * I contain functional tests of the Stage Service.
+ * I contain functional tests of the Stage Service_OLD.
  */
 @Tag( "expensive" )
 //@Disabled( "Enable this to test your ScheduleService. DO NOT MODIFY THIS FILE.")
@@ -24,16 +22,16 @@ public class StageServiceAPITest
 {
     public static final int TEST_PORT = 7777;
 
+    private static Service<StageService> service;
 
     @BeforeAll
     public static void startServer() {
-        SERVICE.initialise("-p="+TEST_PORT).activate("Test Stage-Service");
-
+        service = new Service<>(SERVICE).execute("-p="+TEST_PORT);
     }
 
     @AfterAll
     public static void stopServer(){
-        SERVICE.stop();
+        service.close();
     }
 
     @Test

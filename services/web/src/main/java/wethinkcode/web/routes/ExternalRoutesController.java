@@ -29,14 +29,14 @@ public class ExternalRoutesController implements Route {
 
 
     private String stageURL() {
-        return getURL("StageService", SERVICE.properties.get("manager-url"));
+        return getURL("StageService", SERVICE.managerURL);
     }
 
     private String scheduleURL() {
-        return getURL("ScheduleService", SERVICE.properties.get("manager-url"));
+        return getURL("ScheduleService", SERVICE.managerURL);
     }
 
     private String placesURL () {
-        return getURL("PlacesService", SERVICE.properties.get("manager-url"));
+        return getURL("PlacesService", SERVICE.managerURL);
     }
 }
