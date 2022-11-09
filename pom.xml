@@ -6,16 +6,16 @@
     <version>1.0</version>
     <packaging>pom</packaging>
     <modules>
-        <module>places</module>
-        <module>stage</module>
-        <module>schedule</module>
-        <module>web</module>
+        <module>common</module>
+        <module>services</module>
     </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -33,6 +33,11 @@
             <artifactId>assertj-core</artifactId>
             <version>3.23.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
         </dependency>
     </dependencies>
 </project>

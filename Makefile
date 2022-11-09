@@ -24,5 +24,5 @@ grade:
 
 	@echo +++ Running grading command
 	pushd "$(SUBMISSION_DIR)"
-	docker run -t -v $(SUBMISSION_DIR):/app $(GRADER_IMAGE):latest '$(GRADE_CMD)'
+	docker run -t -v "$(SUBMISSION_DIR):/app" $(GRADER_IMAGE):latest '$(GRADE_CMD)'
 	popd
