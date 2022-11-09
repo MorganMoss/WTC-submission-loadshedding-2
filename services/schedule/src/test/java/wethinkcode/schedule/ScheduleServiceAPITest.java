@@ -37,7 +37,7 @@ public class ScheduleServiceAPITest
 
 
     @BeforeAll
-    public static void initTestScheduleFixture() throws IOException, URISyntaxException {
+    public static void initTestScheduleFixture() throws IOException {
         PlacesService.SERVICE
                 .initialise("-o=false", "-p=3221")
                 .activate("Places Service");

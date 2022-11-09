@@ -3,9 +3,6 @@ package wethinkcode.service;
 import picocli.CommandLine;
 
 import java.io.*;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import static wethinkcode.logger.Logger.formatted;

@@ -168,8 +168,8 @@ function fillProvinces(){
 }
 
 /**
- * This will setup the navbar and the element for content.
- * It redirects to login if the id or email is null.
+ * This will set up the navbar and the element for content.
+ * It redirects to log in if the id or email is null.
  */
 export function main() {
     getStage()

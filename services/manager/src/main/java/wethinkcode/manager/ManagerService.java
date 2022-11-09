@@ -42,7 +42,7 @@ public class ManagerService extends Service{
     }
 
     public void startAllServices(){
-        Path folder = null;
+        Path folder;
         try {
             folder = Path.of(this.getClass().getProtectionDomain()
                     .getCodeSource()

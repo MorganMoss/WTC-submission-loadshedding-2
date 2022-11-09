@@ -26,7 +26,7 @@ public class StageServiceAPITest
 
 
     @BeforeAll
-    public static void startServer() throws IOException, URISyntaxException {
+    public static void startServer() {
         SERVICE.initialise("-p="+TEST_PORT).activate("Test Stage-Service");
 
     }
