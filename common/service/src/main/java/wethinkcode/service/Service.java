@@ -8,9 +8,13 @@ import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
 import org.jetbrains.annotations.NotNull;
 import wethinkcode.router.Router;
-import java.io.IOException;
+
+import java.io.*;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -192,7 +196,7 @@ public abstract class Service implements Runnable {
      */
     private Properties initProperties(String... args) {
         try {
-            return new Properties(this.getClass(), args);
+            return new Properties(this, args);
         } catch (IOException e){
             System.err.println("File error has occurred. This is usually due to a missing config or resource file.");
             System.err.println("Stacktrace: ");
@@ -200,6 +204,30 @@ public abstract class Service implements Runnable {
             System.exit(1);
             return null;
         }
+    }
+
+    /**
+     * Loads default properties as an inputStream
+     */
+    public InputStream getDefaultPropertiesStream(){
+        InputStream content;
+        try {
+            Path path = Path.of(new File(
+                    this.getClass()
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation().toURI()
+
+            ).getPath()).resolve("default.properties");
+            content = new FileInputStream(path.toFile());
+            Objects.requireNonNull(content);
+        } catch (NullPointerException | FileNotFoundException | URISyntaxException e){
+            content = Service.class.getResourceAsStream("/default.properties");
+        }
+
+        Objects.requireNonNull(content);
+
+        return content;
     }
 
     /**

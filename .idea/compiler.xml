@@ -9,11 +9,12 @@
         <module name="schedule" />
         <module name="router" />
         <module name="places" />
+        <module name="helpers" />
         <module name="stage" />
+        <module name="manager" />
         <module name="web" />
         <module name="service" />
         <module name="logger" />
-        <module name="service-manager" />
         <module name="data-objects" />
       </profile>
     </annotationProcessing>

@@ -12,7 +12,7 @@ import java.util.Optional;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
-import static wethinkcode.manager.ServiceManager.SERVICE;
+import static wethinkcode.manager.ManagerService.SERVICE;
 
 @SuppressWarnings("unused")
 public class ServicesController implements Route {

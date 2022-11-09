@@ -13,7 +13,7 @@ import static wethinkcode.logger.Logger.formatted;
 public class Properties implements Callable<Integer> {
     private static final String DEFAULT_PORT = "7000";
     private static final Boolean DEFAULT_COMMAND = false;
-    private final Class<? extends Service> child;
+    private final Service child;
     private Reader reader;
     private final Logger logger;
     private final java.util.Properties properties = new java.util.Properties();
@@ -55,7 +55,7 @@ public class Properties implements Callable<Integer> {
      * @return A string representing that field
      */
     public String get(String nonStandardField){
-        return properties.getProperty(nonStandardField);
+        return (String) properties.get(nonStandardField);
     }
 
     /**
@@ -64,10 +64,10 @@ public class Properties implements Callable<Integer> {
      * @param child class extending Service
      * @throws IOException if an I/O error occurs
      */
-    Properties(Class<? extends Service> child, String ... args) throws IOException {
+    Properties(Service child, String ... args) throws IOException {
         this.child = child;
 
-        logger = formatted(this.getClass().getSimpleName() + " " + child.getSimpleName());
+        logger = formatted(this.getClass().getSimpleName() + " " + child.getClass().getSimpleName());
 
         new CommandLine(this).execute(args);
 
@@ -80,29 +80,8 @@ public class Properties implements Callable<Integer> {
      * Tries the child class first, then if that fails, it will try the Service class.
      */
     void loadDefaultProperties(){
-        InputStream content;
-
-        try {
-            //Gnarly IKR
-            Path path = Path.of(new File(
-                    child
-                            .getProtectionDomain()
-                            .getCodeSource()
-                            .getLocation().toURI()
-
-            ).getPath()).resolve("default.properties");
-
-            content = new FileInputStream(path.toFile());
-            logger.info("Loaded " + child.getSimpleName() + " Default Config File");
-            Objects.requireNonNull(content);
-        } catch (NullPointerException | FileNotFoundException | URISyntaxException e){
-            logger.warning("Failed to load " + child.getSimpleName() + " Default Config File: ");
-            logger.warning(e.toString());
-            content= this.getClass().getResourceAsStream("/default.properties");
-            logger.info("Loaded " + Service.class.getSimpleName() + " Default Config File");
-        }
-
-        Objects.requireNonNull(content);
+        InputStream content = child.getDefaultPropertiesStream();
+        logger.info("Loaded Default Config File");
         reader = new InputStreamReader(content);
     }
 

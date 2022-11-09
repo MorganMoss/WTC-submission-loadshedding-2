@@ -10,6 +10,7 @@ import wethinkcode.model.Stage;
 import wethinkcode.router.Route;
 
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -42,7 +43,7 @@ public class StageController implements Route {
             setStage((int) round((Double) ctx.bodyAsClass(HashMap.class).get("stage")));
             ctx.status(HttpStatus.OK);
         } catch (NullPointerException | ClassCastException | BadStageException e) {
-            ctx.json(e.getMessage());
+            ctx.json(Arrays.deepToString(e.getStackTrace()));
             ctx.status(HttpStatus.BAD_REQUEST);
         }
     }
@@ -55,7 +56,6 @@ public class StageController implements Route {
             setStageLegacy(ctx);
         }
     }
-
 
     @NotNull
     @Override

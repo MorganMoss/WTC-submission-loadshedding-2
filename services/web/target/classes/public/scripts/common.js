@@ -28,17 +28,11 @@ export function navigateTo(URL){
 export function handleResponse(response){
     return new Promise(function(accept, reject) {
         if (response.status < 400) {
-            console.log("SUCCESS")
-
             accept(response.json());
         } else {
             if (reject === null){
-                console.log("ERROR")
-
                 error(response, "app");
             } else {
-                console.log("CUSTOM ERROR")
-
                 reject(response);
             }
         }

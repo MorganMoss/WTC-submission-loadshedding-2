@@ -1,95 +1,42 @@
 package wethinkcode.web.routes;
 
 import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.http.Context;
-import kong.unirest.*;
 import org.jetbrains.annotations.NotNull;
 import wethinkcode.router.Route;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static wethinkcode.router.Route.forward;
+import static wethinkcode.helpers.Helpers.getURL;
 import static wethinkcode.web.WebService.SERVICE;
 
+@SuppressWarnings("unused")
 public class ExternalRoutesController implements Route {
     @NotNull
     @Override
     public EndpointGroup getEndPoints() {
         return () -> {
-            path("provinces",
-                () -> get(
-                    (context) -> forwardRoute(
-                        context,
-                        placesURL()
-                            + "/provinces")
-                )
-            );
-            path("municipalities/{province}",
-                () -> get(
-                    (context) -> forwardRoute(
-                        context,
-                        placesURL()
-                            + "/municipalities/"
-                            + context.pathParam("province")
-                    )
-                )
-            );
-            path("places/municipality/{municipality}",
-                () -> get(
-                    (context) -> forwardRoute(
-                            context,
-                            placesURL()
-                                + "/places/municipality/"
-                                + context.pathParam("municipality")
-                    )
-                )
-            );
-            path("schedule/{province}/{place}/{stage}",
-                () -> get(
-                    (context) -> forwardRoute(
-                            context,
-                            scheduleURL()
-                                + "/"
-                                + context.pathParam("province")
-                                + "/"
-                                + context.pathParam("place")
-                                + "/"
-                                + context.pathParam("stage"))
-                )
-            );
-            path("stage",
-                    () -> get(
-                            (context) -> forwardRoute(
-                                    context,
-                                    stageURL()
-                                            + "/stage"
-                            )
-                    )
-            );
+            forward("provinces",
+                    placesURL() + "/provinces");
+            forward("municipalities/{province}",
+                    placesURL() + "/municipalities/{province}");
+            forward("places/municipality/{municipality}",
+                    placesURL() + "/places/municipality/{municipality}");
+            forward("schedule/{province}/{place}/{stage}",
+                    scheduleURL() + "/{province}/{place}/{stage}");
+            forward("stage",
+                    stageURL() + "/stage");
         };
     }
 
-    private String getURL(String from){
-        String URL = Unirest.get(SERVICE.properties.get("manager-url") + "/service/" + from).asString().getBody();
-        return URL.replace("\"", "");
-    }
 
     private String stageURL() {
-        return getURL("StageService");
+        return getURL("StageService", SERVICE.properties.get("manager-url"));
     }
 
     private String scheduleURL() {
-        return getURL("ScheduleService");
+        return getURL("ScheduleService", SERVICE.properties.get("manager-url"));
     }
 
     private String placesURL () {
-        return getURL("PlacesService");
+        return getURL("PlacesService", SERVICE.properties.get("manager-url"));
     }
-
-    private void forwardRoute(Context context, String route){
-        GetRequest request = Unirest.get(route);
-        HttpResponse<String> response = request.asString();
-        context.result(response.getBody());
-        context.status(response.getStatus());
-    }
-
-
 }

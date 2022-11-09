@@ -13,7 +13,6 @@
         <exec.mainClass>wethinkcode.web.Web</exec.mainClass>
     </properties>
     <dependencies>
-
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
@@ -30,6 +29,12 @@
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
             <version>3.13.11</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>wethinkcode</groupId>
+            <artifactId>helpers</artifactId>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
