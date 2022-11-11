@@ -71,7 +71,7 @@ public class Service<E>{
     public Service(E instance){
         checkClassAnnotation(instance.getClass());
         this.instance = instance;
-        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName());
+        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName(), "\u001B[32m");
     }
 
     /**
@@ -211,7 +211,7 @@ public class Service<E>{
      * @return A JsonMapper for Javalin
      */
     private JsonMapper createJsonMapper() {
-        return new GSONMapper(this.getClass().getSimpleName());
+        return new GSONMapper(instance.getClass().getSimpleName());
     }
 
     private void handleMethods(Method[] methods, Class<? extends Annotation> annotation) {
@@ -226,16 +226,19 @@ public class Service<E>{
         logger.info("Attempting to invoke " + method.getName());
 
         if (annotationClass.equals(RunOnPost.class)) {
-            port = method.getAnnotation(RunOnPost.class).port();
+            port = method.getAnnotation(RunOnPost.class).withServiceAsArg();
         }
         if (annotationClass.equals(RunOnInitialisation.class)) {
-            port = method.getAnnotation(RunOnInitialisation.class).port();
+            port = method.getAnnotation(RunOnInitialisation.class).withServiceAsArg();
         }
 
+
+//        TypeToken.of(Service<E>)
+
         if (port){
-            checkHasArgs(method, int.class);
+//            checkHasArgs(method, );
             try {
-                method.invoke(instance, this.port);
+                method.invoke(instance, this);
                 logger.info("Invoked " + method.getName() + " successfully");
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
@@ -304,13 +307,13 @@ public class Service<E>{
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface RunOnInitialisation {
-        boolean port() default false;
+        boolean withServiceAsArg() default false;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface RunOnPost {
-        boolean port() default false;
+        boolean withServiceAsArg() default false;
     }
 }
 
@@ -352,17 +355,17 @@ class Checks {
         checkHasArgs(method, JavalinConfig.class);
     }
 
-    static void checkHasArgs(Method method, Class<?> ... classes){
+    static void checkHasArgs(Method method, Type ... types){
         Type[] params = method.getGenericParameterTypes();
-        if (params.length != classes.length){
+        if (params.length != types.length){
             throw new ArgumentException(
                     method.getName() + " has not got enough parameters");
         }
 
-        for (int i = 0; i < classes.length; i++){
-            if (!params[i].equals(classes[i])){
+        for (int i = 0; i < types.length; i++){
+            if (!params[i].equals(types[i])){
                 throw new ArgumentException(
-                        method.getName() + " must have "+ classes[i].getSimpleName() +" as it's parameter");
+                        method.getName() + " must have "+ types[i].getTypeName() +" as it's parameter, not " + params[i].getTypeName());
             }
         }
 

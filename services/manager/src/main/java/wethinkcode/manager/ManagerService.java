@@ -23,28 +23,26 @@ public class ManagerService {
         add(new ScheduleService());
         add(new WebService());
     }};
-    public static final ManagerService MANAGER_SERVICE = new ManagerService();
-    private static final Service<ManagerService> SERVICE = new Service<>(MANAGER_SERVICE);
-    public final HashMap<Integer, Service<Object>> ports = new HashMap<>();
+    public static final HashMap<Integer, Service<?>> ports = new HashMap<>();
 
-    private void addToProperties(Properties properties, int port) {
-        properties.setProperty("manager", SERVICE.url());
-        properties.setProperty("port", String.valueOf(port));
+    private void addToProperties(Properties properties, Service<ManagerService> s) {
+        properties.setProperty("manager", s.url());
+        properties.setProperty("port", String.valueOf(s.port + ports.size() + 1));
         properties.setProperty("commands", "false");
     }
-    private void setUpProperties(File f, InputStream defaults, int port){
+    private void setUpProperties(File f, InputStream defaults, Service<ManagerService> s){
         Properties properties = new Properties();
         try {
             properties.load(new InputStreamReader(defaults));
-            addToProperties(properties, port + ports.size() + 1);
+            addToProperties(properties, s);
             properties.store(new FileOutputStream(f), f.getAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Service.RunOnPost(port = true)
-    public void startAllServices(int port){
+    @Service.RunOnPost(withServiceAsArg = true)
+    public void startAllServices(Service<ManagerService> s){
         Path folder;
         try {
             folder = Path.of(this.getClass().getProtectionDomain()
@@ -57,13 +55,13 @@ public class ManagerService {
         for (Object service : services){
             File f =new File(folder.resolve(service.getClass().getSimpleName() + ".properties").toUri());
 
-            setUpProperties(f, getDefaultPropertiesStream(service.getClass()), port);
+            setUpProperties(f, getDefaultPropertiesStream(service.getClass()), s);
 
-            ports.put(port + ports.size() + 10, new Service<>(service).execute("-c="+f.getAbsolutePath()));
+            ports.put(s.port + ports.size() + 10, new Service<>(service).execute("-c="+f.getAbsolutePath()));
         }
     }
 
     public static void main(String[] args) {
-        SERVICE.execute(args);
+        new Service<>(new ManagerService()).execute(args);
     }
 }

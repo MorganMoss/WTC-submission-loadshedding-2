@@ -50,10 +50,6 @@ public class PlacesService {
      */
     public static Places places;
 
-    public static void main(String... args) {
-        new Service<>(new PlacesService()).execute(args);
-    }
-
     /**
      * Adds the additional initialisation of an in-memory Database of
      * places, municipalities and provinces.
@@ -76,7 +72,7 @@ public class PlacesService {
         } catch (IllegalArgumentException | URISyntaxException e) {
             databaseFile = new File(data_file);
         }
-        
+
         try {
             return new PlacesCsvParser().parseCsvSource(databaseFile);
         } catch (IOException e) {
@@ -86,5 +82,9 @@ public class PlacesService {
             System.exit(1);
             return null;
         }
+    }
+
+    public static void main(String... args) {
+        new Service<>(new PlacesService()).execute(args);
     }
 }

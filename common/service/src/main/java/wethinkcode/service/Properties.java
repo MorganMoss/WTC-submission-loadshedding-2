@@ -48,7 +48,7 @@ public class Properties{
      * @throws IOException if an I/O error occurs
      */
     Properties(Service<?> service, Object e, String ... args) throws IOException {
-        logger = formatted(this.getClass().getSimpleName() + " " + e.getClass().getSimpleName());
+        logger = formatted(this.getClass().getSimpleName() + " " + e.getClass().getSimpleName(), "\u001B[35m");
 
         ArrayList<String> propertiesNames = new ArrayList<>() {{
             add("--config");

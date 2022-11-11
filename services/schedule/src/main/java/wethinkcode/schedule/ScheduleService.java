@@ -24,11 +24,6 @@ public class ScheduleService{
     )
     static String places;
 
-
-    public static void main( String[] args ) {
-        new Service<>(new ScheduleService()).execute(args);
-    }
-
     public static String placeURL(){
         return (manager == null) ? places :
         Unirest.get(manager + "/service/PlacesService").asObject(String.class).getBody();
@@ -40,5 +35,9 @@ public class ScheduleService{
     @Service.CustomJSONMapper
     public JsonMapper createJsonMapper() {
         return new JavalinJackson();
+    }
+
+    public static void main( String[] args ) {
+        new Service<>(new ScheduleService()).execute(args);
     }
 }

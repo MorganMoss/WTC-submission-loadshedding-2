@@ -10,12 +10,12 @@ import wethinkcode.service.Service;
  public class StageService{
     public static Stage stage;
 
-    public static void main(String ... args){
-       new Service<>(new StageService()).execute(args);
+    @Service.RunOnInitialisation()
+    public void customServiceInitialisation() {
+        stage = Stage.STAGE0;
     }
 
-    @Service.RunOnInitialisation(port = false)
-    public   void customServiceInitialisation() {
-        stage = Stage.STAGE0;
+    public static void main(String ... args){
+       new Service<>(new StageService()).execute(args);
     }
 }

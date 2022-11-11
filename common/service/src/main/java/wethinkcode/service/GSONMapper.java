@@ -19,7 +19,7 @@ public class GSONMapper implements JsonMapper {
     final Logger logger;
 
     GSONMapper(String serviceName) {
-        this.logger = formatted(this.getClass().getSimpleName() + " " + serviceName);
+        this.logger = formatted(this.getClass().getSimpleName() + " " + serviceName, "\u001B[34m");
     }
 
     @NotNull

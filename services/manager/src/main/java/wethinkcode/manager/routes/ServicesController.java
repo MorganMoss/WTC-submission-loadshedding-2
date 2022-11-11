@@ -12,7 +12,7 @@ import java.util.Optional;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
-import static wethinkcode.manager.ManagerService.MANAGER_SERVICE;
+import static wethinkcode.manager.ManagerService.ports;
 
 @SuppressWarnings("unused")
 public class ServicesController implements Route {
@@ -25,14 +25,14 @@ public class ServicesController implements Route {
     }
     private void getURL(Context context) {
         String name = Objects.requireNonNull(context.pathParam("name"));
-        Optional<Integer> find = MANAGER_SERVICE.ports
+        Optional<Integer> find = ports
                 .keySet()
                 .stream()
-                .filter((port) -> MANAGER_SERVICE.ports.get(port).getInstance().getClass().getSimpleName().equals(name))
+                .filter((port) -> ports.get(port).getInstance().getClass().getSimpleName().equals(name))
                 .findFirst();
 
         if (find.isPresent()) {
-            context.json(MANAGER_SERVICE.ports.get(find.get()).url());
+            context.json(ports.get(find.get()).url());
             context.status(HttpStatus.OK);
             return;
         }
@@ -42,7 +42,7 @@ public class ServicesController implements Route {
 
     private void getService(Context context) {
         int port = Integer.parseInt(Objects.requireNonNull(context.pathParam("port")));
-        Service<Object> service = MANAGER_SERVICE.ports.get(port);
+        Service<?> service = ports.get(port);
 
         if (service != null) {
             context.json(service.getClass().getSimpleName());

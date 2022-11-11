@@ -1,15 +1,23 @@
 package wethinkcode.router;
 
+import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static wethinkcode.logger.Logger.formatted;
@@ -31,7 +39,7 @@ public class Router {
     public Router(String route_package, String serviceName) {
         this.route_package = route_package;
         this.endpoints = new HashSet<>();
-        logger = formatted(this.getClass().getSimpleName() + " " + serviceName);
+        logger = formatted(this.getClass().getSimpleName() + " " + serviceName, "\u001B[36m");
     }
 
     /**
@@ -117,6 +125,17 @@ public class Router {
         Router router = new Router(owner.getPackageName() + ".routes", owner.getSimpleName());
         router.setupAllHandlers();
         return router.endpoints;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public @interface Controller {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Mapping {
+        Verb verb();
+        String path();
     }
 
 }

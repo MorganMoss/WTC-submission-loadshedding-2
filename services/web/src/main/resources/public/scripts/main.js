@@ -176,5 +176,5 @@ export function main() {
     fillProvinces()
 }
 
-setInterval(getStage, 60000);
+setInterval(getStage, 5000);
 
