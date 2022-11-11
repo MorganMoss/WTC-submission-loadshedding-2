@@ -5,7 +5,6 @@ import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
 import picocli.CommandLine;
 import wethinkcode.router.Controllers;
-import wethinkcode.router.Router;
 
 import java.lang.annotation.*;
 import java.lang.reflect.InvocationTargetException;

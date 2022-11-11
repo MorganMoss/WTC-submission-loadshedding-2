@@ -5,7 +5,7 @@ import wethinkcode.router.Controllers;
 import wethinkcode.web.WebService;
 
 
-import static wethinkcode.router.Route.forward;
+import static wethinkcode.helpers.Helpers.forward;
 import static wethinkcode.helpers.Helpers.getURL;
 import static wethinkcode.web.WebService.manager;
 
