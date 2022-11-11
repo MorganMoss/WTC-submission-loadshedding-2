@@ -48,7 +48,7 @@ public class PlacesService {
     /**
      * Should not be modified, I just prefer the look of SERVER.places vs SERVER.getPlaces()
      */
-    public static Places places;
+    public Places places;
 
     /**
      * Adds the additional initialisation of an in-memory Database of

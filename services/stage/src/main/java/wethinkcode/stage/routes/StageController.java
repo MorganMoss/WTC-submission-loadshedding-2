@@ -1,46 +1,46 @@
 package wethinkcode.stage.routes;
 
 import com.google.gson.JsonParseException;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import wethinkcode.BadStageException;
 import wethinkcode.model.Stage;
-import wethinkcode.router.Route;
+import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
+import wethinkcode.stage.StageService;
 
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
 import static java.lang.Math.round;
-import static wethinkcode.stage.StageService.stage;
 
+@Controllers.Controller("stage")
 @SuppressWarnings("unused")
-public class StageController implements Route {
+public class StageController{
 
     /**
      * Gets a place by name
      */
-    void getStage(Context ctx){
-        ctx.json(stage.json());
+    @Controllers.Mapping(Verb.GET)
+    static public void getStage(Context ctx, StageService instance){
+        ctx.json(instance.stage.json());
         ctx.status(HttpStatus.OK);
     }
 
-    void setStage(int stageNumber) throws BadStageException {
-        stage = Stage.stageFromNumber(stageNumber);
+    static void setStage(int stageNumber, StageService instance) throws BadStageException {
+        instance.stage = Stage.stageFromNumber(stageNumber);
     }
 
-    void setStage(Stage stageObj) throws NullPointerException{
+    static public void setStage(Stage stageObj, StageService instance) throws NullPointerException{
         Objects.requireNonNull(stageObj);
-        stage = stageObj;
+        instance.stage = stageObj;
     }
 
-    void setStageLegacy(Context ctx){
+    static public void setStageLegacy(Context ctx, StageService instance){
         try {
-            setStage((int) round((Double) ctx.bodyAsClass(HashMap.class).get("stage")));
+            setStage((int) round((Double) ctx.bodyAsClass(HashMap.class).get("stage")), instance);
             ctx.status(HttpStatus.OK);
         } catch (NullPointerException | ClassCastException | BadStageException e) {
             ctx.json(Arrays.deepToString(e.getStackTrace()));
@@ -48,21 +48,13 @@ public class StageController implements Route {
         }
     }
 
-    void setStage(Context ctx){
+    @Controllers.Mapping(Verb.POST)
+    static public void setStage(Context ctx, StageService instance){
         try {
-            setStage(ctx.bodyAsClass(Stage.class));
+            setStage(ctx.bodyAsClass(Stage.class), instance);
             ctx.status(HttpStatus.OK);
         } catch (JsonParseException notStageJSON) {
-            setStageLegacy(ctx);
+            setStageLegacy(ctx, instance);
         }
-    }
-
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
-        return () -> path("stage", () -> {
-            get(this::getStage);
-            post(this::setStage);
-        });
     }
 }

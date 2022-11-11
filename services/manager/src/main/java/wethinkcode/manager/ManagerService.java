@@ -23,7 +23,7 @@ public class ManagerService {
         add(new ScheduleService());
         add(new WebService());
     }};
-    public static final HashMap<Integer, Service<?>> ports = new HashMap<>();
+    public final HashMap<Integer, Service<?>> ports = new HashMap<>();
 
     private void addToProperties(Properties properties, Service<ManagerService> s) {
         properties.setProperty("manager", s.url());

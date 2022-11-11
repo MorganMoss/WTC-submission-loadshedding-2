@@ -1,21 +1,24 @@
 package wethinkcode.web.routes;
 
 import io.javalin.apibuilder.EndpointGroup;
-import org.jetbrains.annotations.NotNull;
-import wethinkcode.router.Route;
+import wethinkcode.router.Controllers;
+import wethinkcode.web.WebService;
+
 
 import static wethinkcode.router.Route.forward;
 import static wethinkcode.helpers.Helpers.getURL;
 import static wethinkcode.web.WebService.manager;
 
+
+@Controllers.Controller("")
 @SuppressWarnings("unused")
-public class ExternalRoutesController implements Route {
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
+public class ExternalRoutesController{
+
+    @Controllers.Endpoint
+    static public EndpointGroup forwardedPoints(WebService instance) {
         return () -> {
             forward("provinces",
-                    placesURL() + "/provinces");
+                placesURL() + "/provinces");
             forward("municipalities/{province}",
                     placesURL() + "/municipalities/{province}");
             forward("places/municipality/{municipality}",
@@ -27,16 +30,15 @@ public class ExternalRoutesController implements Route {
         };
     }
 
-
-    private String stageURL() {
+    private static String stageURL() {
         return getURL("StageService", manager);
     }
 
-    private String scheduleURL() {
+    private static String scheduleURL() {
         return getURL("ScheduleService", manager);
     }
 
-    private String placesURL () {
+    private static String placesURL() {
         return getURL("PlacesService", manager);
     }
 }

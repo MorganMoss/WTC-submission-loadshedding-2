@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.*;
 import wethinkcode.model.Schedule;
 import wethinkcode.places.PlacesService;
-import wethinkcode.schedule.transfer.ScheduleDAO;
 import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,14 +43,14 @@ public class ScheduleServiceTest
 
     @Test
     public void testSchedule_someTown() {
-        final Optional<Schedule> schedule = ScheduleDAO.getSchedule( "Eastern Cape", "Gqeberha", 4 );
-        assertTrue( schedule.isPresent() );
-        assertEquals( 4, schedule.get().numberOfDays() );
+        final Optional<Schedule> scheduleOptional = schedule.instance.scheduleDAO.getSchedule( "Eastern Cape", "Gqeberha", 4 );
+        assertTrue( scheduleOptional.isPresent() );
+        assertEquals( 4, scheduleOptional.get().numberOfDays() );
     }
 
     @Test
     public void testSchedule_nonexistentTown() {
-        final Optional<Schedule> schedule = ScheduleDAO.getSchedule( "Mars", "Elonsburg", 2 );
-        assertTrue( schedule.isEmpty() );
+        final Optional<Schedule> scheduleOptional = schedule.instance.scheduleDAO.getSchedule( "Mars", "Elonsburg", 2 );
+        assertTrue( scheduleOptional.isEmpty() );
     }
 }

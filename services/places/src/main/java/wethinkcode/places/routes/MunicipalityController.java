@@ -1,29 +1,27 @@
 package wethinkcode.places.routes;
 
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import wethinkcode.model.Municipality;
 
 import java.util.List;
 import java.util.Optional;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
+import wethinkcode.places.PlacesService;
+import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
 
-import static wethinkcode.places.PlacesService.places;
-
-import wethinkcode.router.Route;
-
+@Controllers.Controller("")
 @SuppressWarnings("unused")
-public class MunicipalityController implements Route {
+public class MunicipalityController{
+
     /**
      * Gets a municipality by name
      */
-    void getMunicipality(Context ctx){
+    @Controllers.Mapping(value = Verb.GET, path = "municipality/{name}")
+    public static void getMunicipality(Context ctx, PlacesService instance){
         String name = ctx.pathParam("name");
-        Optional<Municipality> municipality = places.municipality(name);
+        Optional<Municipality> municipality = instance.places.municipality(name);
 
         if (municipality.isPresent()){
             ctx.json(municipality.get());
@@ -33,9 +31,10 @@ public class MunicipalityController implements Route {
         }
     }
 
-    void getMunicipalitiesInProvince(Context ctx){
+    @Controllers.Mapping(value = Verb.GET, path = "municipalities/{province}")
+    public static void getMunicipalitiesInProvince(Context ctx, PlacesService instance){
         String province = ctx.pathParam("province");
-        List<Municipality> municipalities = places.municipalitiesIn(province);
+        List<Municipality> municipalities = instance.places.municipalitiesIn(province);
 
         if (municipalities.size()>0){
             ctx.json(municipalities);
@@ -43,15 +42,5 @@ public class MunicipalityController implements Route {
         } else {
             ctx.status(HttpStatus.NOT_FOUND);
         }
-    }
-
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
-        return () -> {
-            path("municipality", () -> path("{name}", () -> get(this::getMunicipality)));
-            path("towns", () -> path("{province}", () -> get(this::getMunicipalitiesInProvince)));
-            path("municipalities", () -> path("{province}", () -> get(this::getMunicipalitiesInProvince)));
-        };
     }
 }

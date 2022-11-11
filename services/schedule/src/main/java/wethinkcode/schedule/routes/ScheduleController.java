@@ -1,29 +1,21 @@
 package wethinkcode.schedule.routes;
 
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import wethinkcode.BadStageException;
 import wethinkcode.model.Schedule;
 import wethinkcode.model.Stage;
-import wethinkcode.router.Route;
-import wethinkcode.schedule.transfer.ScheduleDAO;
+import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
+import wethinkcode.schedule.ScheduleService;
 
 import java.util.Optional;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-
+@Controllers.Controller("{province}/{place}/{stage}")
 @SuppressWarnings("unused")
-public class ScheduleController implements Route {
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
-        return () -> path("{province}/{place}/{stage}", () -> get(this::getSchedule));
-    }
-
-    private void getSchedule(Context context) {
+public class ScheduleController{
+    @Controllers.Mapping(Verb.GET)
+    public static void getSchedule(Context context, ScheduleService instance) {
         String province = context.pathParam("province");
         String place = context.pathParam("place");
         Stage stage;
@@ -37,7 +29,7 @@ public class ScheduleController implements Route {
 
         Optional<Schedule> schedule;
 
-        schedule = ScheduleDAO.getSchedule(province, place, stage.stage);
+        schedule = instance.scheduleDAO.getSchedule(province, place, stage.stage);
 
 
         if (schedule.isPresent()){
@@ -46,7 +38,7 @@ public class ScheduleController implements Route {
             return;
         }
 
-        context.json(ScheduleDAO.emptySchedule());
+        context.json(instance.scheduleDAO.emptySchedule());
         context.status(HttpStatus.NOT_FOUND);
 
     }

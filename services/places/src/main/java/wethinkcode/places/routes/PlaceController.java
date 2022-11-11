@@ -1,28 +1,28 @@
 package wethinkcode.places.routes;
 
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import wethinkcode.model.Place;
 
 import java.util.List;
 import java.util.Optional;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
-import static wethinkcode.places.PlacesService.places;
 
-import wethinkcode.router.Route;
+import wethinkcode.places.PlacesService;
+import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
 
+@Controllers.Controller("")
 @SuppressWarnings("unused")
-public class PlaceController implements Route {
+public class PlaceController{
 
     /**
      * Gets a place by name
      */
-    void getPlace(Context ctx){
+    @Controllers.Mapping(value = Verb.GET, path = "place/{name}")
+    public static void getPlace(Context ctx, PlacesService instance){
         String name = ctx.pathParam("name");
-        Optional<Place> place = places.place(name);
+        Optional<Place> place = instance.places.place(name);
 
         if (place.isPresent()){
             ctx.json(place.get());
@@ -32,9 +32,10 @@ public class PlaceController implements Route {
         }
     }
 
-    void getPlacesInProvince(Context ctx){
+    @Controllers.Mapping(value = Verb.GET, path = "places/province/{province}")
+    public static void getPlacesInProvince(Context ctx, PlacesService instance){
         String province = ctx.pathParam("province");
-        List<Place> placeList = places.placesInProvince(province);
+        List<Place> placeList = instance.places.placesInProvince(province);
 
         if (placeList.size()>0){
             ctx.json(placeList);
@@ -44,9 +45,10 @@ public class PlaceController implements Route {
         }
     }
 
-    void getPlacesInMunicipality(Context ctx){
+    @Controllers.Mapping(value = Verb.GET, path = "places/municipality/{municipality}")
+    public static void getPlacesInMunicipality(Context ctx, PlacesService instance){
         String municipality = ctx.pathParam("municipality");
-        List<Place> placesList = places.placesInMunicipality(municipality);
+        List<Place> placesList = instance.places.placesInMunicipality(municipality);
 
         if (placesList.size()>0){
             ctx.json(placesList);
@@ -56,9 +58,10 @@ public class PlaceController implements Route {
         }
     }
 
-    private void placeExists(Context context) {
+    @Controllers.Mapping(value = Verb.GET, path = "exists/{province}/{place}")
+    public static void placeExists(Context context, PlacesService instance) {
         String province = context.pathParam("province");
-        if (places
+        if (instance.places
                 .provinces()
                 .stream()
                 .noneMatch(p -> p.name().equals(province))
@@ -70,7 +73,7 @@ public class PlaceController implements Route {
 
         String place = context.pathParam("place");
 
-        if (places
+        if (instance.places
                 .placesInProvince(province)
                 .stream()
                 .noneMatch(p -> p.name().equals(place))
@@ -84,19 +87,4 @@ public class PlaceController implements Route {
 
 
     }
-
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
-        return () -> {
-            path("place", () -> path("{name}", () -> get(this::getPlace)));
-            path("places", () -> {
-                path("province/{province}", () -> get(this::getPlacesInProvince));
-                path("municipality/{municipality}", () -> get(this::getPlacesInMunicipality));
-            });
-            path("exists/{province}/{place}", () -> get(this::placeExists));
-        };
-    }
-
-
 }

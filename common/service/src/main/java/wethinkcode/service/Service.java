@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
 import picocli.CommandLine;
+import wethinkcode.router.Controllers;
 import wethinkcode.router.Router;
 
 import java.lang.annotation.*;
@@ -269,7 +270,7 @@ public class Service<E>{
      * Gets the routes from the routes package in the given services package
      */
     private void addRoutes(){
-        Router.loadRoutes(instance.getClass()).forEach(server::routes);
+        new Controllers(instance).getEndpoints().forEach(server::routes);
     }
 
 

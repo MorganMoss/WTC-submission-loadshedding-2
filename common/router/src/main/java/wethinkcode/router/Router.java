@@ -127,15 +127,5 @@ public class Router {
         return router.endpoints;
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    public @interface Controller {}
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-    public @interface Mapping {
-        Verb verb();
-        String path();
-    }
 
 }

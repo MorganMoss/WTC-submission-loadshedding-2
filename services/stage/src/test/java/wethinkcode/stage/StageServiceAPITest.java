@@ -11,7 +11,6 @@ import wethinkcode.model.Stage;
 import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wethinkcode.stage.StageService.stage;
 
 /**
  * I contain functional tests of the Stage Service_OLD.
@@ -78,7 +77,7 @@ public class StageServiceAPITest
         HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/stage" ).asJson();
         assertEquals(HttpStatus.OK ,response.getStatus());
         Stage res = Stage.stageFromNumber(response.getBody().getObject().getInt("stage"));
-        assertEquals(stage, res);
+        assertEquals(service.instance.stage, res);
     }
 
     @Test

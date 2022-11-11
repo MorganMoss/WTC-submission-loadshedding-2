@@ -8,7 +8,7 @@ import wethinkcode.service.Service;
  */
 @Service.AsService
  public class StageService{
-    public static Stage stage;
+    public Stage stage;
 
     @Service.RunOnInitialisation()
     public void customServiceInitialisation() {

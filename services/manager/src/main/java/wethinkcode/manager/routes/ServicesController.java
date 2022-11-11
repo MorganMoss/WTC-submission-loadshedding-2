@@ -1,51 +1,28 @@
 package wethinkcode.manager.routes;
 
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
-import wethinkcode.router.Route;
-import wethinkcode.service.Service;
+import wethinkcode.manager.ManagerService;
+import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static wethinkcode.manager.ManagerService.ports;
-
+@Controllers.Controller("service")
 @SuppressWarnings("unused")
-public class ServicesController implements Route {
-    @NotNull
-    @Override
-    public EndpointGroup getEndPoints() {
-        return () -> path("service", () -> {
-            path("{name}", () -> get(this::getURL));
-        });
-    }
-    private void getURL(Context context) {
+public class ServicesController {
+    @Controllers.Mapping(value = Verb.GET, path = "{name}")
+    public static void getURL(Context context, ManagerService instance) {
         String name = Objects.requireNonNull(context.pathParam("name"));
-        Optional<Integer> find = ports
+        Optional<Integer> find = instance.ports
                 .keySet()
                 .stream()
-                .filter((port) -> ports.get(port).getInstance().getClass().getSimpleName().equals(name))
+                .filter((port) -> instance.ports.get(port).getInstance().getClass().getSimpleName().equals(name))
                 .findFirst();
 
         if (find.isPresent()) {
-            context.json(ports.get(find.get()).url());
-            context.status(HttpStatus.OK);
-            return;
-        }
-
-        context.status(HttpStatus.NOT_FOUND);
-    }
-
-    private void getService(Context context) {
-        int port = Integer.parseInt(Objects.requireNonNull(context.pathParam("port")));
-        Service<?> service = ports.get(port);
-
-        if (service != null) {
-            context.json(service.getClass().getSimpleName());
+            context.json(instance.ports.get(find.get()).url());
             context.status(HttpStatus.OK);
             return;
         }

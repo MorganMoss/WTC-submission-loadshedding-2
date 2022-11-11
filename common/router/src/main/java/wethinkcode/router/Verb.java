@@ -9,7 +9,10 @@ public enum Verb {
     GET (ApiBuilder::get),
     POST (ApiBuilder::post);
     //TODO: Add the rest as needed
-    final BiConsumer<String, Handler> verb;
+    private final BiConsumer<String, Handler> verb;
+    public void invoke(String path, Handler handler){
+        verb.accept(path, handler);
+    }
 
     Verb(BiConsumer<String, Handler> verb){
         this.verb = verb;
