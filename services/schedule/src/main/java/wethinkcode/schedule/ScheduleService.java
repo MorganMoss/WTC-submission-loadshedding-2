@@ -12,28 +12,26 @@ import wethinkcode.service.Service;
  */
 @Service.AsService
 public class ScheduleService{
-    public static final ScheduleService SERVICE = new ScheduleService();
-
     @CommandLine.Option(
             names = {"-m", "--manager"},
             description = {"The URL of the manager service."}
     )
-    String managerURL;
+    static String manager;
 
     @CommandLine.Option(
             names = {"-pl", "--places"},
             description = {"The URL of the places service."}
     )
-    String placesURL;
+    static String places;
 
 
     public static void main( String[] args ) {
-        new Service<>(SERVICE).execute(args);
+        new Service<>(new ScheduleService()).execute(args);
     }
 
-    public String placeURL(){
-        return (managerURL == null) ? placesURL :
-        Unirest.get(managerURL + "/service/PlacesService").asObject(String.class).getBody();
+    public static String placeURL(){
+        return (manager == null) ? places :
+        Unirest.get(manager + "/service/PlacesService").asObject(String.class).getBody();
     }
 
     /**

@@ -8,16 +8,14 @@ import wethinkcode.service.Service;
  */
 @Service.AsService
  public class StageService{
-    public static final StageService SERVICE = new StageService();
     public static Stage stage;
 
     public static void main(String ... args){
-       new Service<>(SERVICE).execute(args);
+       new Service<>(new StageService()).execute(args);
     }
 
-
-    @Service.RunOnServiceInitialisation
-    protected void customServiceInitialisation() {
+    @Service.RunOnInitialisation(port = false)
+    public   void customServiceInitialisation() {
         stage = Stage.STAGE0;
     }
 }

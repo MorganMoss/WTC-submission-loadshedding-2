@@ -6,25 +6,24 @@ import io.javalin.json.JsonMapper;
 import picocli.CommandLine;
 import wethinkcode.router.Router;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
+import static wethinkcode.logger.Logger.formatted;
 import static wethinkcode.service.Checks.*;
 import static wethinkcode.service.Properties.populateFields;
 
-public class Service<E> extends Thread {
+public class Service<E>{
     /**
      * The class annotated as a service
      */
-    public final E service;
+    public final E instance;
     /**
      * The javalin server used to host this service.
      */
@@ -38,6 +37,10 @@ public class Service<E> extends Thread {
             type = Integer.class
     )
     public Integer port=0;
+
+    public E getInstance(){
+        return instance;
+    }
 
     /**
      * Commands enables/disables
@@ -63,9 +66,12 @@ public class Service<E> extends Thread {
     private boolean started = false;
     private boolean stopped = false;
 
-    public Service(E service){
-        checkClassAnnotation(service.getClass());
-        this.service = service;
+    private final Logger logger;
+
+    public Service(E instance){
+        checkClassAnnotation(instance.getClass());
+        this.instance = instance;
+        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName());
     }
 
     /**
@@ -75,11 +81,17 @@ public class Service<E> extends Thread {
      * @return A Service object with an instance of your class.
      */
     public Service<E> execute(String ... args){
-        Method[] methods = service.getClass().getMethods();
+        Method[] methods = instance.getClass().getMethods();
         initProperties(args);
+        logger.info("Properties Instantiated");
         initHttpServer(methods);
-        handleInitMethods(methods);
+        logger.info("Javalin Server Created");
+        handleMethods(methods, RunOnInitialisation.class);
+        logger.info("Initialization Methods Run");
         activate();
+        logger.info("Service Started");
+        handleMethods(methods, RunOnPost.class);
+        logger.info("Post Methods Run");
         return this;
     }
 
@@ -91,7 +103,6 @@ public class Service<E> extends Thread {
         server.stop();
     }
 
-    @Override
     public void run() {
         if (started){
             throw new AlreadyStartedException("This service is designed to be run once");
@@ -104,6 +115,7 @@ public class Service<E> extends Thread {
         }
 
         if (commands) {
+            logger.info("Commands are active");
             startCommands();
         }
     }
@@ -113,8 +125,9 @@ public class Service<E> extends Thread {
      */
     @SuppressWarnings("SleepWhileHoldingLock")
     private void activate(){
-        this.setName(this.service.getClass().getSimpleName());
-        this.start();
+        Thread t = new Thread(this::run);
+        t.setName(this.instance.getClass().getSimpleName());
+        t.start();
 
         try {
             synchronized (lock){
@@ -161,7 +174,7 @@ public class Service<E> extends Thread {
     private void handleCustomJavalinConfig(Method method, JavalinConfig javalinConfig) {
         checkHasJavalinConfigAsArg(method);
         try {
-            method.invoke(service, javalinConfig);
+            method.invoke(instance, javalinConfig);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -174,7 +187,7 @@ public class Service<E> extends Thread {
                 .toList();
 
         if (mapper.size() > 1){
-            throw new MultipleJSONMapperMethodsException(service.getClass().getSimpleName() + " has more than one custom JSON Mapper");
+            throw new MultipleJSONMapperMethodsException(instance.getClass().getSimpleName() + " has more than one custom JSON Mapper");
         }
 
         if (mapper.isEmpty()){
@@ -185,7 +198,7 @@ public class Service<E> extends Thread {
         checkForNoArgs(method);
         checkHasReturnType(method, JsonMapper.class);
         try {
-            return (JsonMapper) method.invoke(service);
+            return (JsonMapper) method.invoke(instance);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -201,17 +214,39 @@ public class Service<E> extends Thread {
         return new GSONMapper(this.getClass().getSimpleName());
     }
 
-    private void handleInitMethods(Method[] methods){
+    private void handleMethods(Method[] methods, Class<? extends Annotation> annotation) {
         Arrays
                 .stream(methods)
-                .filter(method -> method.isAnnotationPresent(RunOnServiceInitialisation.class))
-                .forEach(this::handleInitMethod);
+                .filter(method -> method.isAnnotationPresent(annotation))
+                .forEach(method -> handleMethod(method , annotation));
     }
 
-    private void handleInitMethod(Method method){
+    private void handleMethod(Method method, Class<? extends Annotation> annotationClass){
+        boolean port = false;
+        logger.info("Attempting to invoke " + method.getName());
+
+        if (annotationClass.equals(RunOnPost.class)) {
+            port = method.getAnnotation(RunOnPost.class).port();
+        }
+        if (annotationClass.equals(RunOnInitialisation.class)) {
+            port = method.getAnnotation(RunOnInitialisation.class).port();
+        }
+
+        if (port){
+            checkHasArgs(method, int.class);
+            try {
+                method.invoke(instance, this.port);
+                logger.info("Invoked " + method.getName() + " successfully");
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+            return;
+        }
+
         checkForNoArgs(method);
         try {
-            method.invoke(service);
+            method.invoke(instance);
+            logger.info("Invoked " + method.getName() + " successfully");
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -224,14 +259,14 @@ public class Service<E> extends Thread {
      * @param args CLI arguments
      */
     private void initProperties(String... args) {
-        populateFields(this, service, args);
+        populateFields(this, instance, args);
     }
 
     /**
      * Gets the routes from the routes package in the given services package
      */
     private void addRoutes(){
-        Router.loadRoutes(service.getClass()).forEach(server::routes);
+        Router.loadRoutes(instance.getClass()).forEach(server::routes);
     }
 
 
@@ -268,7 +303,15 @@ public class Service<E> extends Thread {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public @interface RunOnServiceInitialisation {}
+    public @interface RunOnInitialisation {
+        boolean port() default false;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface RunOnPost {
+        boolean port() default false;
+    }
 }
 
 /**
@@ -306,15 +349,24 @@ class Checks {
     }
 
     static void checkHasJavalinConfigAsArg(Method method){
+        checkHasArgs(method, JavalinConfig.class);
+    }
+
+    static void checkHasArgs(Method method, Class<?> ... classes){
         Type[] params = method.getGenericParameterTypes();
-        if (params.length != 1){
-            throw new NoJavalinConfigArgumentException(
-                    method.getName() + " has no Parameters");
+        if (params.length != classes.length){
+            throw new ArgumentException(
+                    method.getName() + " has not got enough parameters");
         }
-        if (!params[0].equals(JavalinConfig.class)){
-            throw new NoJavalinConfigArgumentException(
-                    method.getName() + " must have JavalinConfig as it's single parameter");
+
+        for (int i = 0; i < classes.length; i++){
+            if (!params[i].equals(classes[i])){
+                throw new ArgumentException(
+                        method.getName() + " must have "+ classes[i].getSimpleName() +" as it's parameter");
+            }
         }
+
+
     }
 }
 
@@ -336,8 +388,8 @@ class MethodTakesNoArgumentsException extends RuntimeException {
     }
 }
 
-class NoJavalinConfigArgumentException extends RuntimeException {
-    public NoJavalinConfigArgumentException(String message){
+class ArgumentException extends RuntimeException {
+    public ArgumentException(String message){
         super(message);
     }
 }

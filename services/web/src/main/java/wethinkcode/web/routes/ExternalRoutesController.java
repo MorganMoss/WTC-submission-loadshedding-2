@@ -6,7 +6,7 @@ import wethinkcode.router.Route;
 
 import static wethinkcode.router.Route.forward;
 import static wethinkcode.helpers.Helpers.getURL;
-import static wethinkcode.web.WebService.SERVICE;
+import static wethinkcode.web.WebService.manager;
 
 @SuppressWarnings("unused")
 public class ExternalRoutesController implements Route {
@@ -29,14 +29,14 @@ public class ExternalRoutesController implements Route {
 
 
     private String stageURL() {
-        return getURL("StageService", SERVICE.managerURL);
+        return getURL("StageService", manager);
     }
 
     private String scheduleURL() {
-        return getURL("ScheduleService", SERVICE.managerURL);
+        return getURL("ScheduleService", manager);
     }
 
     private String placesURL () {
-        return getURL("PlacesService", SERVICE.managerURL);
+        return getURL("PlacesService", manager);
     }
 }

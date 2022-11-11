@@ -3,7 +3,6 @@ package wethinkcode.schedule;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Optional;
 
 import org.junit.jupiter.api.*;
@@ -14,7 +13,6 @@ import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static wethinkcode.schedule.ScheduleService.SERVICE;
 
 public class ScheduleServiceTest
 {
@@ -31,11 +29,11 @@ public class ScheduleServiceTest
         config.delete();
         if (config.createNewFile()){
            try(FileWriter r = new FileWriter(config)) {
-               r.write("placesURL=http://localhost:3222");
+               r.write("places=http://localhost:3222");
            }
         }
 
-        schedule = new Service<>(SERVICE).execute("-o=false", "-c="+config.getAbsolutePath());
+        schedule = new Service<>(new ScheduleService()).execute("-o=false", "-c="+config.getAbsolutePath());
     }
 
     @AfterAll

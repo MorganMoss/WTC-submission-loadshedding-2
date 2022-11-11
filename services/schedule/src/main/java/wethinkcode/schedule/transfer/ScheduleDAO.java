@@ -8,7 +8,7 @@ import wethinkcode.model.*;
 import java.time.LocalTime;
 import java.util.*;
 
-import static wethinkcode.schedule.ScheduleService.SERVICE;
+import static wethinkcode.schedule.ScheduleService.placeURL;
 
 public class ScheduleDAO {
     // There *must* be a better way than this...
@@ -23,9 +23,9 @@ public class ScheduleDAO {
     private static boolean validateProvince(String province) {
         JSONObject toMatch = new JSONObject(new Province(province));
 
-        System.out.println(SERVICE.placeURL());
+        System.out.println(placeURL());
         JSONArray provinces = Unirest
-                .get(SERVICE.placeURL() + "/provinces")
+                .get(placeURL() + "/provinces")
                 .asJson()
                 .getBody()
                 .getArray();

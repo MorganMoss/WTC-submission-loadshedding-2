@@ -21,7 +21,6 @@ public class ServicesController implements Route {
     public EndpointGroup getEndPoints() {
         return () -> path("service", () -> {
             path("{name}", () -> get(this::getURL));
-            path("{port}", () -> get(this::getService));
         });
     }
     private void getURL(Context context) {
@@ -29,7 +28,7 @@ public class ServicesController implements Route {
         Optional<Integer> find = MANAGER_SERVICE.ports
                 .keySet()
                 .stream()
-                .filter((port) -> MANAGER_SERVICE.ports.get(port).getClass().getSimpleName().equals(name))
+                .filter((port) -> MANAGER_SERVICE.ports.get(port).getInstance().getClass().getSimpleName().equals(name))
                 .findFirst();
 
         if (find.isPresent()) {

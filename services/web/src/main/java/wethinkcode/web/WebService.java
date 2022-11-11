@@ -13,20 +13,19 @@ import wethinkcode.service.Service;
  */
 @Service.AsService
 public class WebService{
-    public static final WebService SERVICE = new WebService();
+
     @CommandLine.Option(
             names = {"-m", "--manager"},
-            description = {"The URL of the manager service."},
-            required = true
+            description = {"The URL of the manager service."}
     )
-    public String managerURL;
+    public static String manager;
 
     public static void main( String[] args){
-        new Service<>(SERVICE).execute(args);
+        new Service<>(new WebService()).execute(args);
     }
 
     @Service.CustomJavalinConfig
-    protected void customJavalinConfig(JavalinConfig config) {
+    public void customJavalinConfig(JavalinConfig config) {
         config.staticFiles.add("/public");
     }
 }

@@ -16,7 +16,6 @@ import wethinkcode.places.PlacesService;
 import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wethinkcode.schedule.ScheduleService.SERVICE;
 
 /**
  * I am an API / functional test of the ScheduleService. I am not a unit test.
@@ -48,11 +47,11 @@ public class ScheduleServiceAPITest
         config.deleteOnExit();
         if (config.createNewFile()){
             try(FileWriter r = new FileWriter(config)) {
-                r.write("placesURL=http://localhost:3221");
+                r.write("places=http://localhost:3221");
             }
         }
 
-        schedule = new Service<>(SERVICE).execute("-p=" + TEST_PORT, "-c="+config.getAbsolutePath());
+        schedule = new Service<>(new ScheduleService()).execute("-p=" + TEST_PORT, "-c="+config.getAbsolutePath());
     }
 
     @AfterAll

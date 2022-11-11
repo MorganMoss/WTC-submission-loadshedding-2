@@ -1,6 +1,7 @@
 package wethinkcode.helpers;
 
 import kong.unirest.Unirest;
+import kong.unirest.UnirestException;
 
 public final class Helpers {
 
@@ -10,8 +11,17 @@ public final class Helpers {
      * @return the URL of that server.
      */
     public static String getURL(String from, String managerURL){
-        String URL = Unirest.get(managerURL + "/service/" + from).asString().getBody();
-        return URL.replace("\"", "");
+        try {
+            String URL = Unirest.get(managerURL + "/service/" + from).asString().getBody();
+            return URL.replace("\"", "");
+        } catch (UnirestException e){
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            return getURL(from, managerURL);
+        }
     }
 
 }

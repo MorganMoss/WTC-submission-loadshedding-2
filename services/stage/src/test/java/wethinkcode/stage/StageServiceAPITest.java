@@ -11,7 +11,7 @@ import wethinkcode.model.Stage;
 import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wethinkcode.stage.StageService.SERVICE;
+import static wethinkcode.stage.StageService.stage;
 
 /**
  * I contain functional tests of the Stage Service_OLD.
@@ -26,7 +26,7 @@ public class StageServiceAPITest
 
     @BeforeAll
     public static void startServer() {
-        service = new Service<>(SERVICE).execute("-p="+TEST_PORT);
+        service = new Service<>(new StageService()).execute("-p="+TEST_PORT);
     }
 
     @AfterAll
@@ -77,8 +77,8 @@ public class StageServiceAPITest
     public void getStageJson() throws BadStageException {
         HttpResponse<JsonNode> response = Unirest.get( serverUrl() + "/stage" ).asJson();
         assertEquals(HttpStatus.OK ,response.getStatus());
-        Stage stage = Stage.stageFromNumber(response.getBody().getObject().getInt("stage"));
-        assertEquals(SERVICE.stage, stage);
+        Stage res = Stage.stageFromNumber(response.getBody().getObject().getInt("stage"));
+        assertEquals(stage, res);
     }
 
     @Test

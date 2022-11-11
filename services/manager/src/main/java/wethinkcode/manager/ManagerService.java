@@ -27,27 +27,24 @@ public class ManagerService {
     private static final Service<ManagerService> SERVICE = new Service<>(MANAGER_SERVICE);
     public final HashMap<Integer, Service<Object>> ports = new HashMap<>();
 
-    //TODO add forward property annotation
-    private int port;
-
-    private void addToProperties(Properties properties) {
-        properties.setProperty("manager", SERVICE.url() );
-        properties.setProperty("port", String.valueOf(port + ports.size() + 1));
+    private void addToProperties(Properties properties, int port) {
+        properties.setProperty("manager", SERVICE.url());
+        properties.setProperty("port", String.valueOf(port));
         properties.setProperty("commands", "false");
     }
-
-    private void setUpProperties(File f, InputStream defaults){
+    private void setUpProperties(File f, InputStream defaults, int port){
         Properties properties = new Properties();
         try {
             properties.load(new InputStreamReader(defaults));
-            addToProperties(properties);
+            addToProperties(properties, port + ports.size() + 1);
             properties.store(new FileOutputStream(f), f.getAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void startAllServices(){
+    @Service.RunOnPost(port = true)
+    public void startAllServices(int port){
         Path folder;
         try {
             folder = Path.of(this.getClass().getProtectionDomain()
@@ -60,14 +57,13 @@ public class ManagerService {
         for (Object service : services){
             File f =new File(folder.resolve(service.getClass().getSimpleName() + ".properties").toUri());
 
-            setUpProperties(f, getDefaultPropertiesStream(service.getClass()));
+            setUpProperties(f, getDefaultPropertiesStream(service.getClass()), port);
 
-            ports.put(this.port + ports.size() + 10, new Service<>(service).execute("-c="+f.getAbsolutePath()));
+            ports.put(port + ports.size() + 10, new Service<>(service).execute("-c="+f.getAbsolutePath()));
         }
     }
 
     public static void main(String[] args) {
-        MANAGER_SERVICE.port = new Service<>(MANAGER_SERVICE).execute(args).port;
-        MANAGER_SERVICE.startAllServices();
+        SERVICE.execute(args);
     }
 }
