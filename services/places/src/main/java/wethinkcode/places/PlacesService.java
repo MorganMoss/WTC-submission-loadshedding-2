@@ -37,8 +37,6 @@ import wethinkcode.service.Service;
  */
 @Service.AsService
 public class PlacesService {
-
-    public static final PlacesService PLACES_SERVICE = new PlacesService();
     /**
      * Contains the path to the csv file full of places data
      */
@@ -53,7 +51,7 @@ public class PlacesService {
     public static Places places;
 
     public static void main(String... args) {
-        new Service<>(PLACES_SERVICE).execute(args);
+        new Service<>(new PlacesService()).execute(args);
     }
 
     /**

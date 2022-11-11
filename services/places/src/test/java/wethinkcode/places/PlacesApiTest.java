@@ -16,7 +16,6 @@ import wethinkcode.model.Place;
 import wethinkcode.service.Service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static wethinkcode.places.PlacesService.PLACES_SERVICE;
 
 /**
  * *Functional* tests of the PlacesService.
@@ -52,7 +51,7 @@ public class PlacesApiTest
             properties.deleteOnExit();
         }
 
-        SERVICE = new Service<>(PLACES_SERVICE)
+        SERVICE = new Service<>(new PlacesService())
                 .execute("-p="+TEST_PORT, "-c="+properties.getAbsolutePath());
 
 
