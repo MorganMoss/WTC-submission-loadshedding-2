@@ -30,7 +30,7 @@ public class Controllers {
             this.getClass().getSimpleName()
                     + " "
                     + instance.getClass().getSimpleName(),
-            "\u001B[36m");
+                "\u001B[38;5;39m", "\u001B[38;5;45m");
     }
 
     public Set<EndpointGroup> getEndpoints(){

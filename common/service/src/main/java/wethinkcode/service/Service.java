@@ -69,10 +69,14 @@ public class Service<E>{
 
     private final Logger logger;
 
+    private static final String ANNOTATION_COLOUR = "\u001B[38;5;221m";
+    private static final String SERVER_COLOUR = "\u001B[38;5;215m";
+
+
     public Service(E instance){
         checkClassAnnotation(instance.getClass());
         this.instance = instance;
-        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName(), "\u001B[32m");
+        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName(), SERVER_COLOUR, ANNOTATION_COLOUR);
     }
 
     /**
@@ -95,7 +99,7 @@ public class Service<E>{
         logger.info("Post Methods Run");
         return this;
     }
-
+    
     public void close(){
         if (stopped){
             throw new AlreadyStoppedException("This service is designed to be stopped once");
@@ -108,6 +112,7 @@ public class Service<E>{
         if (started){
             throw new AlreadyStartedException("This service is designed to be run once");
         }
+
         started = true;
         server.start(port);
 
@@ -117,7 +122,10 @@ public class Service<E>{
 
         if (commands) {
             logger.info("Commands are active");
-            startCommands();
+            Thread th = new Thread(this::startCommands);
+            th.setName("Command Handler " + instance.getClass().getSimpleName());
+            th.start();
+
         }
     }
 
@@ -292,7 +300,6 @@ public class Service<E>{
                 javalinConfig.jsonMapper(handleCustomJSONMapper(methods));
             }
         );
-
         this.addRoutes();
     }
 
