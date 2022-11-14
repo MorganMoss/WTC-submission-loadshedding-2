@@ -3,6 +3,7 @@ package wethinkcode.service;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import picocli.CommandLine;
 import wethinkcode.router.Controllers;
 
@@ -165,6 +166,7 @@ public class Service<E>{
     }
 
     private void handleCustomJavalinConfigs(Method[] methods, JavalinConfig javalinConfig) {
+        logger.info("Handling Custom Javalin Configs");
         Arrays
                 .stream(methods)
                 .filter(method -> method.isAnnotationPresent(CustomJavalinConfig.class))
@@ -172,6 +174,7 @@ public class Service<E>{
     }
 
     private void handleCustomJavalinConfig(Method method, JavalinConfig javalinConfig) {
+        logger.info("Invoking " + method.getName());
         checkHasJavalinConfigAsArg(method);
         try {
             method.invoke(instance, javalinConfig);
@@ -281,6 +284,11 @@ public class Service<E>{
         server = Javalin.create(
             javalinConfig -> {
                 handleCustomJavalinConfigs(methods, javalinConfig);
+                if (instance.getClass().getAnnotation(AsService.class).AnyHost()){
+                    javalinConfig.plugins.enableCors(cors -> {
+                        cors.add(CorsPluginConfig::anyHost);
+                    });
+                }
                 javalinConfig.jsonMapper(handleCustomJSONMapper(methods));
             }
         );
@@ -294,7 +302,9 @@ public class Service<E>{
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    public @interface AsService {}
+    public @interface AsService {
+        boolean AnyHost() default true;
+    }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)

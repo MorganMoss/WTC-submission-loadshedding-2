@@ -178,3 +178,4 @@ export function main() {
 
 setInterval(getStage, 5000);
 
+fetch('http://localhost:50055/provinces',options).then(handleResponse).then(console.log)
