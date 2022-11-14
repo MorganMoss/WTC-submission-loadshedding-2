@@ -1,44 +1,36 @@
 package wethinkcode.web.routes;
 
-import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.Context;
+import io.javalin.http.HttpStatus;
 import wethinkcode.router.Controllers;
+import wethinkcode.router.Verb;
 import wethinkcode.web.WebService;
 
 
-import static wethinkcode.helpers.Helpers.forward;
 import static wethinkcode.helpers.Helpers.getURL;
 import static wethinkcode.web.WebService.manager;
 
 
-@Controllers.Controller("")
+@Controllers.Controller("url")
 @SuppressWarnings("unused")
 public class ExternalRoutesController{
-
-    @Controllers.Endpoint
-    static public EndpointGroup forwardedPoints(WebService instance) {
-        return () -> {
-            forward("provinces",
-                placesURL() + "/provinces");
-            forward("municipalities/{province}",
-                    placesURL() + "/municipalities/{province}");
-            forward("places/municipality/{municipality}",
-                    placesURL() + "/places/municipality/{municipality}");
-            forward("schedule/{province}/{place}/{stage}",
-                    scheduleURL() + "/{province}/{place}/{stage}");
-            forward("stage",
-                    stageURL() + "/stage");
-        };
+    private static void sendURLToContext(Context ctx, String url){
+        ctx.json(url);
+        ctx.status(HttpStatus.OK);
     }
 
-    private static String stageURL() {
-        return getURL("StageService", manager);
+    @Controllers.Mapping(value = Verb.GET, path = "stage")
+    public static void stageURL(Context ctx, WebService instance) {
+        sendURLToContext(ctx,getURL("StageService", manager));
     }
 
-    private static String scheduleURL() {
-        return getURL("ScheduleService", manager);
+    @Controllers.Mapping(value = Verb.GET, path = "schedule")
+    public static void scheduleURL(Context ctx, WebService instance) {
+        sendURLToContext(ctx,getURL("ScheduleService", manager));
     }
 
-    private static String placesURL() {
-        return getURL("PlacesService", manager);
+    @Controllers.Mapping(value = Verb.GET, path = "places")
+    public static void placesURL(Context ctx, WebService instance) {
+        sendURLToContext(ctx,getURL("PlacesService", manager));
     }
 }

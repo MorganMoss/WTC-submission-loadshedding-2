@@ -45,19 +45,19 @@ public class Controllers {
     }
 
     private Stream<Method> findMappings(Class<?> clazz){
-        logger.info("Getting Mappings...");
+        String path = clazz.getAnnotation(Controller.class).value();
+        logger.info("Adding endpoints for '"+ path +"' from the class " + clazz.getSimpleName());
         return Arrays.stream(clazz.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Mapping.class));
         }
     private void addEndpoints(Class<?> clazz){
         String path = clazz.getAnnotation(Controller.class).value();
-        logger.info("Adding endpoints for '"+ path +"' from the class " + clazz.getSimpleName());
         endpoints.add(() -> ApiBuilder.path(path, () -> findMappings(clazz).forEach(this::runMethod)));
         findEndpoints(clazz).forEach(endpoints::add);
     }
 
     private Stream<EndpointGroup> findEndpoints(Class<?> clazz) {
-        logger.info("Getting Endpoint Groups");
+//        logger.info("Getting Endpoint Groups");
         return Arrays.stream(clazz.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Endpoint.class))
                 .map(method -> {
@@ -73,8 +73,11 @@ public class Controllers {
         Mapping annotation = method.getAnnotation(Mapping.class);
         String path = annotation.path();
         Verb verb = annotation.value();
-        logger.info("Adding " +verb.name()+ (path.equals("") ? "":" for '" + path + "'") + " from the method " + method);
-        verb.invoke(path, (ctx) -> method.invoke(instance, ctx, instance));
+        logger.info(verb.name()+ (path.equals("") ? "":" for '" + path + "'") + " from the method " + method.getName());
+        verb.invoke(path, (ctx) -> {
+            logger.info("Invoking " + method.getName());
+            method.invoke(instance, ctx, instance);
+        });
     }
 
     private Set<Class<?>> findControllers(){

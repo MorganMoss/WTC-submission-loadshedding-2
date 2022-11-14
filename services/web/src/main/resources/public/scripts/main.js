@@ -8,15 +8,19 @@ const options = {
 }
 
 function getStage() {
-    fetch("/stage", options)
+    fetch("url/stage")
         .then(handleResponse)
-        .then(data => {
-            console.log(data)
-            stage =  data["stage"];
-            description = data["description"];
-            document.getElementById('stage').innerText = String(stage);
-            document.getElementById('description').innerText =description ;
-        })
+        .then(url =>
+            fetch(url +"/stage", options)
+                .then(handleResponse)
+                .then(data => {
+                    console.log(data)
+                    stage =  data["stage"];
+                    description = data["description"];
+                    document.getElementById('stage').innerText = String(stage);
+                    document.getElementById('description').innerText =description ;
+                })
+    )
 }
 
 function fillTable(data) {
@@ -63,18 +67,23 @@ function fillTable(data) {
 }
 
 function getSchedule(province, place){
-    fetch('/schedule/' + province + '/' + place + "/" + stage , options )
-        .then(handleResponse)
-        .then(
-            data => {
-                console.log(data)
-                fillTable(data);
-            }
-        )
+    fetch("url/schedule")
+        .then(handleResponse).then(url =>
+            fetch(url + '/' + province + '/' + place + "/" + stage , options )
+                .then(handleResponse)
+                .then(
+                    data => {
+                        console.log(data)
+                        fillTable(data);
+                    }
+                )
+    )
 }
 
 function fillPlaces(municipality) {
-    fetch('/places/municipality/' +municipality, options )
+    fetch("url/places")
+        .then(handleResponse).then(url =>
+        fetch(url + '/places/municipality/' +municipality, options )
         .then(handleResponse)
         .then(
             data => {
@@ -102,25 +111,60 @@ function fillPlaces(municipality) {
                 )
             }, any => {}
         )
-
+    )
     return null;
 }
 
 function fillMunicipalities(province) {
     const places = $('#places');
     places.empty()
+    fetch("url/places")
+        .then(handleResponse).then(url =>
+            fetch(url + '/municipalities/' + province, options)
+            .then(handleResponse)
+            .then(
+                data => {
+                    const dropdown = $('#municipalities');
+                    dropdown.empty();
 
-    fetch('/municipalities/' + province, options)
-        .then(handleResponse)
-        .then(
-            data => {
-                const dropdown = $('#municipalities');
+                    dropdown.append('<option selected="true" disabled>Choose Municipality</option>');
+                    dropdown.prop('selectedIndex', 0);
+
+                    $.each(data, function (i, option) {
+                        dropdown.append(
+                            $('<option/>')
+                                .attr("value", option.name)
+                                .text(option.name)
+                        );
+                    });
+
+                    const municipalities_select = document.getElementById('municipalities');
+                    municipalities_select.addEventListener(
+                        'change', event => fillPlaces(event.target.value)
+                    );
+
+                }, any => {}
+                )
+            )
+    return null;
+}
+
+function fillProvinces(){
+    fetch("url/places")
+        .then(handleResponse).then(url =>
+            fetch(url + `/provinces`, options)
+            .then(handleResponse)
+            .then(data => {
+
+
+                const dropdown = $('#provinces');
                 dropdown.empty();
 
-                dropdown.append('<option selected="true" disabled>Choose Municipality</option>');
+                dropdown.append('<option selected="true" disabled>Choose Province</option>');
                 dropdown.prop('selectedIndex', 0);
 
                 $.each(data, function (i, option) {
+                    console.log(option.name)
                     dropdown.append(
                         $('<option/>')
                             .attr("value", option.name)
@@ -128,43 +172,13 @@ function fillMunicipalities(province) {
                     );
                 });
 
-                const municipalities_select = document.getElementById('municipalities');
-                municipalities_select.addEventListener(
-                    'change', event => fillPlaces(event.target.value)
+                const province_select = document.getElementById('provinces');
+                province_select.addEventListener(
+                    'change', event => fillMunicipalities(event.target.value)
                 );
 
-            }, any => {}
-            )
-    return null;
-}
-
-function fillProvinces(){
-    fetch(`/provinces`, options)
-        .then(handleResponse)
-        .then(data => {
-
-
-            const dropdown = $('#provinces');
-            dropdown.empty();
-
-            dropdown.append('<option selected="true" disabled>Choose Province</option>');
-            dropdown.prop('selectedIndex', 0);
-
-            $.each(data, function (i, option) {
-                console.log(option.name)
-                dropdown.append(
-                    $('<option/>')
-                        .attr("value", option.name)
-                        .text(option.name)
-                );
-            });
-
-            const province_select = document.getElementById('provinces');
-            province_select.addEventListener(
-                'change', event => fillMunicipalities(event.target.value)
-            );
-
-        });
+            })
+        )
 }
 
 /**
@@ -175,7 +189,5 @@ export function main() {
     getStage()
     fillProvinces()
 }
-
 setInterval(getStage, 5000);
 
-fetch('http://localhost:50055/provinces',options).then(handleResponse).then(console.log)
