@@ -39,7 +39,7 @@ public enum Stage {
 
     @Override
     public String toString() {
-        return "{ stage: " + this.stage + ", description: " + this.description + " }";
+        return "{ \"stage\": " + this.stage + ", \"description\": \"" + this.description + "\" }";
     }
 
     public JsonObject json(){

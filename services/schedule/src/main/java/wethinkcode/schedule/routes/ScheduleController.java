@@ -1,7 +1,9 @@
 package wethinkcode.schedule.routes;
 
+import com.google.gson.Gson;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import kong.unirest.Unirest;
 import wethinkcode.BadStageException;
 import wethinkcode.model.Schedule;
 import wethinkcode.model.Stage;
@@ -9,27 +11,22 @@ import wethinkcode.router.Controllers;
 import wethinkcode.router.Verb;
 import wethinkcode.schedule.ScheduleService;
 
+import java.util.HashMap;
 import java.util.Optional;
 
-@Controllers.Controller("{province}/{place}/{stage}")
+import static java.lang.Math.round;
+
+@Controllers.Controller("{province}/{place}")
 @SuppressWarnings("unused")
 public class ScheduleController{
     @Controllers.Mapping(Verb.GET)
     public static void getSchedule(Context context, ScheduleService instance) {
         String province = context.pathParam("province");
         String place = context.pathParam("place");
-        Stage stage;
-
-        try {
-            stage = Stage.stageFromNumber(Integer.parseInt(context.pathParam("stage")));
-        } catch (NumberFormatException | BadStageException e){
-            context.status(HttpStatus.BAD_REQUEST);
-            return;
-        }
 
         Optional<Schedule> schedule;
 
-        schedule = instance.scheduleDAO.getSchedule(province, place, stage.stage);
+        schedule = instance.scheduleDAO.getSchedule(province, place, instance.getStage());
 
 
         if (schedule.isPresent()){

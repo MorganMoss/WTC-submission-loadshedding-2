@@ -30,12 +30,13 @@ public class StageController{
     }
 
     static void setStage(int stageNumber, StageService instance) throws BadStageException {
-        instance.stage = Stage.stageFromNumber(stageNumber);
+        setStage(Stage.stageFromNumber(stageNumber), instance);
     }
 
     static public void setStage(Stage stageObj, StageService instance) throws NullPointerException{
         Objects.requireNonNull(stageObj);
         instance.stage = stageObj;
+        instance.stageUpdates.add(instance.stage.toString());
     }
 
     static public void setStageLegacy(Context ctx, StageService instance){

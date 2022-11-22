@@ -69,7 +69,7 @@ function fillTable(data) {
 function getSchedule(province, place){
     fetch("url/schedule")
         .then(handleResponse).then(url =>
-            fetch(url + '/' + province + '/' + place + "/" + stage , options )
+            fetch(url + '/' + province + '/' + place , options )
                 .then(handleResponse)
                 .then(
                     data => {

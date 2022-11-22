@@ -3,8 +3,10 @@ package wethinkcode.schedule;
 import io.javalin.json.JavalinJackson;
 import io.javalin.json.JsonMapper;
 import kong.unirest.Unirest;
+import kong.unirest.json.JSONObject;
 import picocli.CommandLine;
 import wethinkcode.schedule.transfer.ScheduleDAO;
+import wethinkcode.service.Listener;
 import wethinkcode.service.Service;
 
 /**
@@ -25,6 +27,8 @@ public class ScheduleService{
     )
     String places;
 
+    int stage;
+
     public final ScheduleDAO scheduleDAO = new ScheduleDAO();
 
     @Service.RunOnInitialisation
@@ -41,9 +45,16 @@ public class ScheduleService{
         return new JavalinJackson();
     }
 
+    @Service.Listen(prefix = Listener.Prefix.TOPIC, destination = "stage")
+    public void stageListener(String message){
+        stage = new JSONObject(message).getInt("stage");
+    }
 
+    public int getStage() {
+        return stage;
+    }
 
-    public static void main( String[] args ) {
+    public static void main(String[] args ) {
         new Service<>(new ScheduleService()).execute(args);
     }
 }

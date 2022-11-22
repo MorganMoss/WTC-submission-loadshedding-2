@@ -8,13 +8,16 @@ import picocli.CommandLine;
 import wethinkcode.router.Controllers;
 
 import java.lang.annotation.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static wethinkcode.logger.Logger.formatted;
 import static wethinkcode.service.Checks.*;
@@ -91,15 +94,98 @@ public class Service<E>{
         logger.info("Properties Instantiated");
         initHttpServer(methods);
         logger.info("Javalin Server Created");
-        handleMethods(methods, RunOnInitialisation.class);
-        logger.info("Initialization Methods Run");
+
+        if (handleMethods(methods, RunOnInitialisation.class)){
+            logger.info("Initialization Methods Run");
+        } else {
+            logger.info("No Initialization Methods to run");
+        }
+
         activate();
         logger.info("Service Started");
-        handleMethods(methods, RunOnPost.class);
-        logger.info("Post Methods Run");
+
+        if (handleMethods(methods, RunOnPost.class)){
+            logger.info("Post Methods Run");
+        } else {
+            logger.info("No Post Methods to run");
+        }
+        if (startListening(methods)){
+            logger.info("Message Listeners Active");
+        } else {
+            logger.info("No Message Listeners found");
+        }
+
+        if (startPublishing(instance.getClass().getFields())){
+            logger.info("Message Publishers Active");
+        } else {
+            logger.info("No Message Publishers found");
+        }
+
+
         return this;
     }
-    
+
+    private boolean startPublishing(Field[] fields) {
+        Stream<Field> f = Arrays
+                .stream(fields)
+                .filter(field -> field.isAnnotationPresent(Publish.class));
+
+        List<Field> methodList = f.toList();
+
+        if (methodList.isEmpty()){
+            return false;
+        }
+
+        methodList.forEach(this::createPublisher);
+        return true;
+    }
+
+    private void createPublisher(Field field) {
+        Thread publisherThread = new Thread(() -> {
+        Publisher l = new Publisher(field.getAnnotation(Publish.class).prefix().prefix + field.getAnnotation(Publish.class).destination(), field.getName());
+        try {
+            l.publish((Queue<String>) field.get(instance));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }});
+        publisherThread.setName("Annotation Handler: " + field.getName());
+        publisherThread.start();
+    }
+
+    private boolean startListening(Method[] methods) {
+        Stream<Method> m = Arrays
+                .stream(methods)
+                .filter(method -> method.isAnnotationPresent(Listen.class));
+
+        List<Method> methodList = m.toList();
+
+        if (methodList.isEmpty()){
+            return false;
+        }
+
+        methodList.forEach(this::createListener);
+        return true;
+    }
+
+    private void createListener(Method method) {
+        Thread listenerThread = new Thread(() -> {Listener l = new Listener(method.getAnnotation(Listen.class).prefix().prefix + method.getAnnotation(Listen.class).destination(), method.getName());
+        l.listen((message) -> {
+            try {
+                if (method.getAnnotation(Listen.class).withServiceAsArg()){
+                    method.invoke(instance, message, this);
+                } else {
+                    method.invoke(instance, message);
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        });
+        listenerThread.setName("Annotation Handler: " + method.getName());
+        listenerThread.start();
+
+    }
+
     public void close(){
         if (stopped){
             throw new AlreadyStoppedException("This service is designed to be stopped once");
@@ -225,45 +311,53 @@ public class Service<E>{
         return new GSONMapper(instance.getClass().getSimpleName());
     }
 
-    private void handleMethods(Method[] methods, Class<? extends Annotation> annotation) {
-        Arrays
+    private boolean handleMethods(Method[] methods, Class<? extends Annotation> annotation) {
+        Stream<Method> m = Arrays
                 .stream(methods)
-                .filter(method -> method.isAnnotationPresent(annotation))
-                .forEach(method -> handleMethod(method , annotation));
+                .filter(method -> method.isAnnotationPresent(annotation));
+
+        List<Method> methodList = m.toList();
+
+        if (methodList.isEmpty()){
+            return false;
+        }
+
+        methodList.forEach(method -> handleMethod(method , annotation));
+        return true;
     }
 
     private void handleMethod(Method method, Class<? extends Annotation> annotationClass){
-        boolean port = false;
-        logger.info("Attempting to invoke " + method.getName());
+        Thread thread = new Thread(() -> {
+            boolean port = false;
+            logger.info("Attempting to invoke " + method.getName());
 
-        if (annotationClass.equals(RunOnPost.class)) {
-            port = method.getAnnotation(RunOnPost.class).withServiceAsArg();
-        }
-        if (annotationClass.equals(RunOnInitialisation.class)) {
-            port = method.getAnnotation(RunOnInitialisation.class).withServiceAsArg();
-        }
+            if (annotationClass.equals(RunOnPost.class)) {
+                port = method.getAnnotation(RunOnPost.class).withServiceAsArg();
+            }
+            if (annotationClass.equals(RunOnInitialisation.class)) {
+                port = method.getAnnotation(RunOnInitialisation.class).withServiceAsArg();
+            }
 
+            if (port) {
+                try {
+                    method.invoke(instance, this);
+                    logger.info("Invoked " + method.getName() + " successfully");
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+                return;
+            }
 
-//        TypeToken.of(Service<E>)
-
-        if (port){
-//            checkHasArgs(method, );
+            checkForNoArgs(method);
             try {
-                method.invoke(instance, this);
+                method.invoke(instance);
                 logger.info("Invoked " + method.getName() + " successfully");
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
-            return;
-        }
-
-        checkForNoArgs(method);
-        try {
-            method.invoke(instance);
-            logger.info("Invoked " + method.getName() + " successfully");
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        });
+        thread.setName("Annotation Handler: " + method.getName());
+        thread.start();
     }
 
 
@@ -331,6 +425,21 @@ public class Service<E>{
     @Target(ElementType.METHOD)
     public @interface RunOnPost {
         boolean withServiceAsArg() default false;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Listen {
+        String destination();
+        Listener.Prefix prefix() default Listener.Prefix.TOPIC;
+        boolean withServiceAsArg() default false;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Publish {
+        String destination();
+        Listener.Prefix prefix() default Listener.Prefix.TOPIC;
     }
 }
 
