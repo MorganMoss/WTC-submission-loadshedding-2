@@ -7,7 +7,6 @@ import wethinkcode.model.Stage;
 import wethinkcode.service.Listener;
 import wethinkcode.service.Service;
 
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 import static wethinkcode.stage.routes.StageController.setStage;

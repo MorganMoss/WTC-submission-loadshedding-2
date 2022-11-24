@@ -26,6 +26,7 @@ public class Publisher {
         String host = env("ACTIVEMQ_HOST", "localhost");
         int port = Integer.parseInt(env("ACTIVEMQ_PORT", "5672"));
         this.connectionURI = "amqp://" + host + ":" + port;
+//        this.connectionURI = Service.MESSAGE_QUEUE_URL;
     }
 
     public void publish(Queue<String> messages) {

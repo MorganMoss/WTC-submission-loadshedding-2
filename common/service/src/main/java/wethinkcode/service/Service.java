@@ -7,6 +7,9 @@ import io.javalin.plugin.bundled.CorsPluginConfig;
 import picocli.CommandLine;
 import wethinkcode.router.Controllers;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.annotation.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -16,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -24,14 +28,20 @@ import static wethinkcode.service.Checks.*;
 import static wethinkcode.service.Properties.populateFields;
 
 public class Service<E>{
+    private static Thread MESSAGE_QUEUE;
+    private static Process MESSAGE_QUEUE_PROCESS;
+    public static String MESSAGE_QUEUE_URL;
+
     /**
      * The class annotated as a service
      */
     public final E instance;
+
     /**
      * The javalin server used to host this service.
      */
     private Javalin server;
+
     /**
      * Port for the service
      */
@@ -41,10 +51,6 @@ public class Service<E>{
             type = Integer.class
     )
     public Integer port=0;
-
-    public E getInstance(){
-        return instance;
-    }
 
     /**
      * Commands enables/disables
@@ -56,39 +62,51 @@ public class Service<E>{
     )
     Boolean commands = false;
 
-
+    /**
+     * Domain of the server, default is localhost
+     */
     @CommandLine.Option(
             names = {"--domain", "-dom"},
             description = "The host name of the server"
     )
     String domain = "http://localhost";
 
+    private final Logger logger;
+
     /**
      * Used for waiting
      */
     private final Object lock = new Object();
+
     private boolean started = false;
     private boolean stopped = false;
 
-    private final Logger logger;
-
-    private static final String ANNOTATION_COLOUR = "\u001B[38;5;221m";
-    private static final String SERVER_COLOUR = "\u001B[38;5;215m";
-
-
+    /**
+     * Create a service instance.
+     * Run Execute on this instance to set up and start the service
+     * <br><br>
+     * Must use the Service annotations
+     * <br><br>
+     * Use picocli's @CommandLine.Option
+     * for custom fields to have them instantiated by the Properties of this service
+     * <br><br>
+     * Use Controllers annotation for any routes you wish to set up.
+     * <br><br>
+     * @param instance an instantiated object that will be run as a service.
+     *
+     */
     public Service(E instance){
         checkClassAnnotation(instance.getClass());
         this.instance = instance;
-        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName(), SERVER_COLOUR, ANNOTATION_COLOUR);
+        logger = formatted("Annotation Handler: " + instance.getClass().getSimpleName(),  "\u001B[38;5;215m", "\u001B[38;5;221m");
     }
-
     /**
-     * Run this method to create a new service from a class you have annotated with @AsService.
+     * This will set up and run the server
      * <br/><br/>
-     * Use picocli's @CommandLine.Option for custom fields to have them instantiated by the Properties of this service
      * @return A Service object with an instance of your class.
      */
     public Service<E> execute(String ... args){
+        startMessageQueue();
         Method[] methods = instance.getClass().getMethods();
         initProperties(args);
         logger.info("Properties Instantiated");
@@ -120,10 +138,73 @@ public class Service<E>{
         } else {
             logger.info("No Message Publishers found");
         }
-
-
         return this;
     }
+
+    /**
+     * Stops this service
+     * @throws AlreadyStoppedException if you try stop it a second time.
+     */
+    public void close() throws AlreadyStoppedException{
+        if (stopped){
+            throw new AlreadyStoppedException("This service is designed to be stopped once");
+        }
+        stopped = true;
+        server.stop();
+    }
+
+    private static void endMessageQueue(){
+        MESSAGE_QUEUE_PROCESS.destroy();
+    }
+
+    private static void startMessageQueue(){
+        if (MESSAGE_QUEUE != null){
+            return;
+        }
+        AtomicBoolean active = new AtomicBoolean(false);
+
+        ProcessBuilder builder = new ProcessBuilder("./ActiveMQ/apache-activemq-5.17.2/bin/activemq", "console");
+        builder.redirectErrorStream(true);
+        MESSAGE_QUEUE_PROCESS = null;
+        try {
+            MESSAGE_QUEUE_PROCESS = builder.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Process finalP = MESSAGE_QUEUE_PROCESS;
+
+        MESSAGE_QUEUE = new Thread(() -> {
+            final BufferedReader r = new BufferedReader(new InputStreamReader(finalP.getInputStream()));
+            String line;
+            Logger messageQueueLogger = formatted("Message Queue", "\u001B[38;5;247m", "\u001B[38;5;249m");
+            while (true) {
+                try {
+                    line = r.readLine();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                if (line == null) {
+                    endMessageQueue();
+                    break;
+                }
+                if (line.contains("ActiveMQ WebConsole available at ")) {
+                    Service.MESSAGE_QUEUE_URL = line.replace("ActiveMQ WebConsole available at ", "");
+                    active.set(true);
+                }
+                messageQueueLogger.info(line.replace("INFO | ", "").replace("INFO: ", "").strip());
+            }
+        });
+        MESSAGE_QUEUE.setName("Message Queue");
+        MESSAGE_QUEUE.start();
+        while (!active.get()) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 
     private boolean startPublishing(Field[] fields) {
         Stream<Field> f = Arrays
@@ -186,15 +267,8 @@ public class Service<E>{
 
     }
 
-    public void close(){
-        if (stopped){
-            throw new AlreadyStoppedException("This service is designed to be stopped once");
-        }
-        stopped = true;
-        server.stop();
-    }
 
-    public void run() {
+    private void run() {
         if (started){
             throw new AlreadyStartedException("This service is designed to be run once");
         }
@@ -397,48 +471,129 @@ public class Service<E>{
         this.addRoutes();
     }
 
+    /**
+     * Gets the URL of this service
+     * @return a string representing the URL of this service
+     */
     public String url() {
         return domain + ":" + port;
     }
 
+    /**
+     * Annotates a class as a service and marks it as able to be used as such.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
     public @interface AsService {
+        /**
+         * Boolean that when true will allow other origins to access these routes
+         */
         boolean AnyHost() default true;
     }
 
+    /**
+     * Marks a method to be run first in Javalin.create()
+     * <br><br>
+     * Requires that the method accepts a JavalinConfig object
+     * as it's only parameter
+     * <br><br>
+     * This method can be a non-static or static member of the instance class
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface CustomJavalinConfig {}
 
+    /**
+     * Marks a method to be used to get a JSON Mapper
+     * <br><br>
+     * Requires that the method returns an instantiated JsonMapper object
+     * and that it has no arguments
+     * <br><br>
+     * This method can be a non-static or static member of the instance class
+     * and only ONE method can be annotated as a custom JSON mapper
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface CustomJSONMapper {}
 
+    /**
+     * Marks a method to be run before the service starts.
+     * <br><br>
+     * Requires that the method has no arguments, or Service typed as the instance class
+     * as it's only argument
+     * <br><br>
+     * This method can be a non-static or static member of the instance class
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface RunOnInitialisation {
+        /**
+         * Marks this method as one that accepts the service as an argument
+         */
         boolean withServiceAsArg() default false;
     }
 
+    /**
+     * Marks a method to be run after the service starts.
+     * <br><br>
+     * Requires that the method has no arguments, or Service typed as the instance class
+     * as it's only argument
+     * <br><br>
+     * This method can be a non-static or static member of the instance class
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface RunOnPost {
+        /**
+         * Marks this method as one that accepts the service as an argument
+         */
         boolean withServiceAsArg() default false;
     }
 
+    /**
+     * Marks a method to be used as a message consumer for a listener
+     * <br><br>
+     * Requires that the method has a String argument for the message to handle, and optionally a Service typed as the instance class
+     * as it's second argument
+     * <br><br>
+     * This method can be a non-static or static member of the instance class
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface Listen {
+        /**
+         * The name of the queue or topic this method will listen on
+         */
         String destination();
+
+        /**
+         * prefix marking this as listening on a queue or topic
+         */
         Listener.Prefix prefix() default Listener.Prefix.TOPIC;
+
+        /**
+         * Marks this method as one that accepts the service as a second argument
+         */
         boolean withServiceAsArg() default false;
     }
 
+    /**
+     * Marks a Queue object to be used as a message producer for a publisher
+     * <br><br>
+     * Requires that the queue contains only String objects
+     * <br><br>
+     * This field can be a non-static or static member of the instance class and cannot be null
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface Publish {
+        /**
+         * The name of the queue or topic this method will listen on
+         */
         String destination();
+        /**
+         * prefix marking this as listening on a queue or topic
+         */
         Listener.Prefix prefix() default Listener.Prefix.TOPIC;
     }
 }
