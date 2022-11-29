@@ -2,8 +2,8 @@ package wethinkcode.web.routes;
 
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import wethinkcode.router.Controllers;
-import wethinkcode.router.Verb;
+import wethinkcode.service.controllers.Controllers;
+import wethinkcode.service.controllers.Verb;
 import wethinkcode.web.WebService;
 
 

@@ -1,6 +1,7 @@
-package wethinkcode.service;
+package wethinkcode.service.properties;
 
 import picocli.CommandLine;
+import wethinkcode.service.Service;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -8,7 +9,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 

@@ -1,4 +1,4 @@
-package wethinkcode.service;
+package wethinkcode.service.messages;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 
@@ -26,7 +26,6 @@ public class Publisher {
         String host = env("ACTIVEMQ_HOST", "localhost");
         int port = Integer.parseInt(env("ACTIVEMQ_PORT", "5672"));
         this.connectionURI = "amqp://" + host + ":" + port;
-//        this.connectionURI = Service.MESSAGE_QUEUE_URL;
     }
 
     public void publish(Queue<String> messages) {
@@ -39,10 +38,10 @@ public class Publisher {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         Destination destination = null;
-        if (destinationName.startsWith(Listener.Prefix.TOPIC.prefix)) {
-            destination = session.createTopic(destinationName.substring(Listener.Prefix.TOPIC.prefix.length()));
+        if (destinationName.startsWith(Prefix.TOPIC.prefix)) {
+            destination = session.createTopic(destinationName.substring(Prefix.TOPIC.prefix.length()));
         } else {
-            destination = session.createQueue(destinationName.substring(Listener.Prefix.QUEUE.prefix.length()));
+            destination = session.createQueue(destinationName.substring(Prefix.QUEUE.prefix.length()));
         }
             MessageProducer producer = session.createProducer(destination);
             producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);

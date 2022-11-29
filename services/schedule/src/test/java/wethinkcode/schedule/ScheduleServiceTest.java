@@ -9,6 +9,7 @@ import org.junit.jupiter.api.*;
 import wethinkcode.model.Schedule;
 import wethinkcode.places.PlacesService;
 import wethinkcode.service.Service;
+import wethinkcode.stage.StageService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,10 +18,14 @@ public class ScheduleServiceTest
 {
     private static Service<PlacesService> places;
     private static Service<ScheduleService> schedule;
+    private static Service<StageService> stage;
+
+
 
     @BeforeAll
     static void startPlacesService() throws IOException {
         places = new Service<>(new PlacesService()).execute("-o=false", "-p=3222");
+        stage = new Service<>(new StageService()).execute("-o=false", "-p=1234");
 
         File config = new File("test.properties");
         config.deleteOnExit();
@@ -37,6 +42,7 @@ public class ScheduleServiceTest
 
     @AfterAll
     static void closeAll() {
+        stage.close();
         schedule.close();
         places.close();
     }

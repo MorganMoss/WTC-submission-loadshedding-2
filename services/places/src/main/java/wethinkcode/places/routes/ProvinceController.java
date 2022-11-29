@@ -8,8 +8,8 @@ import java.util.Collection;
 
 
 import wethinkcode.places.PlacesService;
-import wethinkcode.router.Controllers;
-import wethinkcode.router.Verb;
+import wethinkcode.service.controllers.Controllers;
+import wethinkcode.service.controllers.Verb;
 
 @Controllers.Controller("provinces")
 @SuppressWarnings("unused")

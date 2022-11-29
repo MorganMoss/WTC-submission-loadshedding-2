@@ -97,11 +97,11 @@ public class Client {
                 if (line.trim().equals("ROLLBACK")) {
                     System.out.println("Rolling back...");
                     senderSession.rollback();
-                    System.out.println("Messages have been rolledback");
+                    System.out.println("messages have been rolledback");
                 } else if (line.trim().equals("COMMIT")) {
                     System.out.println("Committing... ");
                     senderSession.commit();
-                    System.out.println("Messages should have been sent");
+                    System.out.println("messages should have been sent");
                 } else {
                     TextMessage message = senderSession.createTextMessage();
                     message.setText(line);

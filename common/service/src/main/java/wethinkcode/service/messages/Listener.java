@@ -1,4 +1,4 @@
-package wethinkcode.service;
+package wethinkcode.service.messages;
 
 import org.apache.qpid.jms.*;
 import javax.jms.*;
@@ -82,14 +82,5 @@ public class Listener {
         return rc;
     }
 
-    public enum Prefix{
-        QUEUE ("queue://"),
-        TOPIC ("topic://");
 
-
-        public final String prefix;
-        Prefix(String s) {
-            prefix = s;
-        }
-    }
 }

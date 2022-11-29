@@ -14,6 +14,7 @@ import org.junit.jupiter.api.*;
 import wethinkcode.model.Schedule;
 import wethinkcode.places.PlacesService;
 import wethinkcode.service.Service;
+import wethinkcode.stage.StageService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -25,9 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ScheduleServiceAPITest
 {
     public static final int TEST_PORT = 8876;
-
     private static Service<PlacesService> places;
     private static Service<ScheduleService> schedule;
+    private static Service<StageService> stage;
 
     @BeforeAll
     public static void initJsonMapper(){
@@ -51,19 +52,22 @@ public class ScheduleServiceAPITest
             }
         }
 
+        stage = new Service<>(new StageService()).execute("-o=false","-p=1234");
+
         schedule = new Service<>(new ScheduleService()).execute("-p=" + TEST_PORT, "-c="+config.getAbsolutePath());
     }
 
     @AfterAll
     public static void destroyTestFixture(){
         places.close();
+        stage.close();
         schedule.close();
     }
 
     @Test
     public void getSchedule_someTown(){
         HttpResponse<Schedule> response = Unirest
-            .get(schedule.url() + "/Eastern%20Cape/Gqeberha/4" )
+            .get(schedule.url() + "/Eastern%20Cape/Gqeberha" )
             .asObject( Schedule.class );
         assertEquals( HttpStatus.OK, response.getStatus());
 
@@ -75,18 +79,9 @@ public class ScheduleServiceAPITest
     @Test
     public void getSchedule_nonexistentTown(){
         HttpResponse<Schedule> response = Unirest
-            .get(schedule.url() + "/Mars/Elonsburg/4" )
+            .get(schedule.url() + "/Mars/Elonsburg" )
             .asObject( Schedule.class );
         assertEquals( HttpStatus.NOT_FOUND, response.getStatus() );
         assertEquals( 0, response.getBody().numberOfDays() );
     }
-
-    @Test
-    public void illegalStage(){
-        HttpResponse<Schedule> response = Unirest
-            .get(schedule.url() + "/Western%20Cape/Knysna/42" )
-            .asObject( Schedule.class );
-        assertEquals( HttpStatus.BAD_REQUEST, response.getStatus() );
-    }
-
 }

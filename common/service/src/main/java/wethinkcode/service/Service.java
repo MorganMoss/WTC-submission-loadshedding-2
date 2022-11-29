@@ -4,12 +4,14 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
 import io.javalin.plugin.bundled.CorsPluginConfig;
+import org.apache.activemq.broker.BrokerService;
 import picocli.CommandLine;
-import wethinkcode.router.Controllers;
+import wethinkcode.service.controllers.Controllers;
+import wethinkcode.service.json.GSONMapper;
+import wethinkcode.service.messages.Listener;
+import wethinkcode.service.messages.Prefix;
+import wethinkcode.service.messages.Publisher;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.annotation.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -19,18 +21,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static wethinkcode.logger.Logger.formatted;
 import static wethinkcode.service.Checks.*;
-import static wethinkcode.service.Properties.populateFields;
+import static wethinkcode.service.properties.Properties.populateFields;
 
 public class Service<E>{
-    private static Thread MESSAGE_QUEUE;
-    private static Process MESSAGE_QUEUE_PROCESS;
-    public static String MESSAGE_QUEUE_URL;
+    private static final BrokerService BROKER = new BrokerService();
+    private static int SERVICE_COUNT = 0;
+    private static final Logger BROKER_LOGGER = formatted("Message Queue", "\u001B[38;5;247m", "\u001B[38;5;249m");
+
 
     /**
      * The class annotated as a service
@@ -71,6 +73,16 @@ public class Service<E>{
     )
     String domain = "http://localhost";
 
+    /**
+     * Port for the service
+     */
+    @CommandLine.Option(
+            names = {"--broker-port", "-bp"},
+            description = "The port of the activeMQ broker",
+            type = Integer.class
+    )
+    static String BROKER_PORT = BrokerService.DEFAULT_PORT;
+
     private final Logger logger;
 
     /**
@@ -106,6 +118,9 @@ public class Service<E>{
      * @return A Service object with an instance of your class.
      */
     public Service<E> execute(String ... args){
+        SERVICE_COUNT++;
+        logger.info("Active Service Count: " + SERVICE_COUNT);
+
         startMessageQueue();
         Method[] methods = instance.getClass().getMethods();
         initProperties(args);
@@ -113,7 +128,7 @@ public class Service<E>{
         initHttpServer(methods);
         logger.info("Javalin Server Created");
 
-        if (handleMethods(methods, RunOnInitialisation.class)){
+        if (handleMethods(methods, RunBefore.class)){
             logger.info("Initialization Methods Run");
         } else {
             logger.info("No Initialization Methods to run");
@@ -122,7 +137,7 @@ public class Service<E>{
         activate();
         logger.info("Service Started");
 
-        if (handleMethods(methods, RunOnPost.class)){
+        if (handleMethods(methods, RunAfter.class)){
             logger.info("Post Methods Run");
         } else {
             logger.info("No Post Methods to run");
@@ -138,6 +153,7 @@ public class Service<E>{
         } else {
             logger.info("No Message Publishers found");
         }
+
         return this;
     }
 
@@ -150,61 +166,76 @@ public class Service<E>{
             throw new AlreadyStoppedException("This service is designed to be stopped once");
         }
         stopped = true;
+
         server.stop();
+        SERVICE_COUNT--;
+        logger.info("Active Service Count: " + SERVICE_COUNT);
+        if (SERVICE_COUNT == 0){
+            endMessageQueue();
+        }
     }
 
     private static void endMessageQueue(){
-        MESSAGE_QUEUE_PROCESS.destroy();
+        if (!BROKER.isStarted()){
+            return;
+        }
+
+        BROKER_LOGGER.info("Closing ActiveMQ Service...");
+        try {
+            BROKER.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        BROKER_LOGGER.info("Closed ActiveMQ Service");
+
     }
 
     private static void startMessageQueue(){
-        if (MESSAGE_QUEUE != null){
+        if (BROKER.isStarted()){
             return;
         }
-        AtomicBoolean active = new AtomicBoolean(false);
 
-        ProcessBuilder builder = new ProcessBuilder("./ActiveMQ/apache-activemq-5.17.2/bin/activemq", "console");
-        builder.redirectErrorStream(true);
-        MESSAGE_QUEUE_PROCESS = null;
-        try {
-            MESSAGE_QUEUE_PROCESS = builder.start();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Process finalP = MESSAGE_QUEUE_PROCESS;
+//        BROKER_LOGGER.info("Starting ActiveMQ Service...");
+//        BROKER.setPersistent(false);
+//        BROKER.setBrokerName("Service Broker");
+//        try {
+//            BROKER.addConnector("tcp://localhost:" + BROKER_PORT);
+//            BROKER.start();
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//        BROKER_LOGGER.info("Started ActiveMQ Service");
 
-        MESSAGE_QUEUE = new Thread(() -> {
-            final BufferedReader r = new BufferedReader(new InputStreamReader(finalP.getInputStream()));
-            String line;
-            Logger messageQueueLogger = formatted("Message Queue", "\u001B[38;5;247m", "\u001B[38;5;249m");
-            while (true) {
-                try {
-                    line = r.readLine();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if (line == null) {
-                    endMessageQueue();
-                    break;
-                }
-                if (line.contains("ActiveMQ WebConsole available at ")) {
-                    Service.MESSAGE_QUEUE_URL = line.replace("ActiveMQ WebConsole available at ", "");
-                    active.set(true);
-                }
-                messageQueueLogger.info(line.replace("INFO | ", "").replace("INFO: ", "").strip());
-            }
-        });
-        MESSAGE_QUEUE.setName("Message Queue");
-        MESSAGE_QUEUE.start();
-        while (!active.get()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+//        MESSAGE_QUEUE_THREAD = new Thread(() -> {
+//            final BufferedReader r = new BufferedReader(new InputStreamReader(finalP.getInputStream()));
+//            String line;
+//            while (true) {
+//                try {
+//                    line = r.readLine();
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//                if (line == null) {
+//                    endMessageQueue();
+//                    break;
+//                }
+//
+//                if (line.contains("ERROR: ActiveMQ is already running")){
+//                    MESSAGE_QUEUE_LOGGER.warning("Active MQ Started elsewhere. Shutting down...");
+//                    System.exit(3);
+//                }
+//
+//                if (line.contains("ActiveMQ WebConsole available at ")) {
+//                    Service.MESSAGE_QUEUE_URL = line.replace("ActiveMQ WebConsole available at ", "");
+//                    active.set(true);
+//                }
+//                MESSAGE_QUEUE_LOGGER.info(line.replace("INFO | ", "").replace("INFO: ", "").strip());
+//            }
+//        });
+//        MESSAGE_QUEUE_THREAD.setName("Message Queue");
+//        MESSAGE_QUEUE_THREAD.start();
     }
-
 
     private boolean startPublishing(Field[] fields) {
         Stream<Field> f = Arrays
@@ -249,7 +280,8 @@ public class Service<E>{
     }
 
     private void createListener(Method method) {
-        Thread listenerThread = new Thread(() -> {Listener l = new Listener(method.getAnnotation(Listen.class).prefix().prefix + method.getAnnotation(Listen.class).destination(), method.getName());
+        Thread listenerThread = new Thread(() -> {
+            Listener l = new Listener(method.getAnnotation(Listen.class).prefix().prefix + method.getAnnotation(Listen.class).destination(), method.getName());
         l.listen((message) -> {
             try {
                 if (method.getAnnotation(Listen.class).withServiceAsArg()){
@@ -266,7 +298,6 @@ public class Service<E>{
         listenerThread.start();
 
     }
-
 
     private void run() {
         if (started){
@@ -405,11 +436,11 @@ public class Service<E>{
             boolean port = false;
             logger.info("Attempting to invoke " + method.getName());
 
-            if (annotationClass.equals(RunOnPost.class)) {
-                port = method.getAnnotation(RunOnPost.class).withServiceAsArg();
+            if (annotationClass.equals(RunAfter.class)) {
+                port = method.getAnnotation(RunAfter.class).withServiceAsArg();
             }
-            if (annotationClass.equals(RunOnInitialisation.class)) {
-                port = method.getAnnotation(RunOnInitialisation.class).withServiceAsArg();
+            if (annotationClass.equals(RunBefore.class)) {
+                port = method.getAnnotation(RunBefore.class).withServiceAsArg();
             }
 
             if (port) {
@@ -434,7 +465,6 @@ public class Service<E>{
         thread.start();
     }
 
-
     /**
      * Handles the CLI and properties file to configure the service
      *
@@ -450,7 +480,6 @@ public class Service<E>{
     private void addRoutes(){
         new Controllers(instance).getEndpoints().forEach(server::routes);
     }
-
 
     /**
      * Creates the javalin server.
@@ -526,7 +555,7 @@ public class Service<E>{
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public @interface RunOnInitialisation {
+    public @interface RunBefore {
         /**
          * Marks this method as one that accepts the service as an argument
          */
@@ -543,7 +572,7 @@ public class Service<E>{
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public @interface RunOnPost {
+    public @interface RunAfter {
         /**
          * Marks this method as one that accepts the service as an argument
          */
@@ -569,7 +598,7 @@ public class Service<E>{
         /**
          * prefix marking this as listening on a queue or topic
          */
-        Listener.Prefix prefix() default Listener.Prefix.TOPIC;
+        Prefix prefix() default Prefix.TOPIC;
 
         /**
          * Marks this method as one that accepts the service as a second argument
@@ -594,7 +623,7 @@ public class Service<E>{
         /**
          * prefix marking this as listening on a queue or topic
          */
-        Listener.Prefix prefix() default Listener.Prefix.TOPIC;
+        Prefix prefix() default Prefix.TOPIC;
     }
 }
 

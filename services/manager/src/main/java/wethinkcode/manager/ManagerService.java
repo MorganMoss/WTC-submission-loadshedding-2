@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 
-import static wethinkcode.service.Properties.getDefaultPropertiesStream;
+import static wethinkcode.service.properties.Properties.getDefaultPropertiesStream;
 
 @Service.AsService
 public class ManagerService {
@@ -41,7 +41,7 @@ public class ManagerService {
         }
     }
 
-    @Service.RunOnPost(withServiceAsArg = true)
+    @Service.RunAfter(withServiceAsArg = true)
     public void startAllServices(Service<ManagerService> s){
         Path folder;
         try {

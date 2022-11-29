@@ -54,7 +54,7 @@ public class PlacesService {
      * Adds the additional initialisation of an in-memory Database of
      * places, municipalities and provinces.
      */
-    @Service.RunOnInitialisation
+    @Service.RunBefore
     public void createPlaces() {
         places = initPlacesDb(data);
     }

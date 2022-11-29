@@ -1,4 +1,4 @@
-package wethinkcode.service;
+package wethinkcode.service.json;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -18,7 +18,7 @@ public class GSONMapper implements JsonMapper {
     final Gson gson = builder.create();
     final Logger logger;
 
-    GSONMapper(String serviceName) {
+    public GSONMapper(String serviceName) {
         this.logger = formatted(this.getClass().getSimpleName() + " " + serviceName,
                 "\u001B[38;5;40m", "\u001B[38;5;83m");
     }

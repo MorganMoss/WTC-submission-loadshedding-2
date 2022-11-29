@@ -1,4 +1,4 @@
-package wethinkcode.router;
+package wethinkcode.service.controllers;
 
 
 import io.javalin.apibuilder.ApiBuilder;

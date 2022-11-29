@@ -9,8 +9,8 @@ import java.util.Optional;
 
 
 import wethinkcode.places.PlacesService;
-import wethinkcode.router.Controllers;
-import wethinkcode.router.Verb;
+import wethinkcode.service.controllers.Controllers;
+import wethinkcode.service.controllers.Verb;
 
 @Controllers.Controller("")
 @SuppressWarnings("unused")

@@ -3,11 +3,10 @@ package wethinkcode.manager.routes;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import wethinkcode.manager.ManagerService;
-import wethinkcode.router.Controllers;
-import wethinkcode.router.Verb;
+import wethinkcode.service.controllers.Controllers;
+import wethinkcode.service.controllers.Verb;
 import wethinkcode.service.Service;
 
-import javax.swing.text.html.Option;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +35,7 @@ public class ServicesController {
         ports
                 .keySet()
                 .stream()
-                .filter((port) -> ports.get(port).getInstance().getClass().getSimpleName().equals(name))
+                .filter((port) -> ports.get(port).instance.getClass().getSimpleName().equals(name))
                 .findFirst().ifPresent(port -> url.set(Optional.of(ports.get(port).url())));
 
         return url.get();

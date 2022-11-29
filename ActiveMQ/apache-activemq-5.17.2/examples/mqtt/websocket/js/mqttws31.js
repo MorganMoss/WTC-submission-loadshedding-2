@@ -720,10 +720,10 @@ Messaging = (function (global) {
         // Internal queue of messages to be sent, in sending order. 
         this._msg_queue = [];
 
-        // Messages we have sent and are expecting a response for, indexed by their respective message ids. 
+        // messages we have sent and are expecting a response for, indexed by their respective message ids.
         this._sentMessages = {};
 
-        // Messages we have received and acknowleged and are expecting a confirm message for
+        // messages we have received and acknowleged and are expecting a confirm message for
         // indexed by their respective message ids. 
         this._receivedMessages = {};
  
@@ -1773,7 +1773,7 @@ Messaging = (function (global) {
      * <p>
      * @property {Boolean} retained If true, the message is to be retained by the server and delivered 
    	 *                     to both current and future subscriptions.
-   	 *                     If false the server only delivers the message to current subscribers, this is the default for new Messages. 
+   	 *                     If false the server only delivers the message to current subscribers, this is the default for new messages.
    	 *                     A received message has the retained boolean set to true if the message was published 
    	 *                     with the retained boolean set to true
    	 *                     and the subscrption was made after the message has been published. 
