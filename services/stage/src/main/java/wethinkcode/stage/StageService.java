@@ -15,7 +15,7 @@ import static wethinkcode.stage.routes.StageController.setStage;
  * I provide a Stages Service_OLD for South Africa.
  */
 @Service.AsService
- public class StageService{
+public class StageService{
     public Stage stage;
 
     @Service.Publish(destination = "stage", prefix = Prefix.TOPIC)

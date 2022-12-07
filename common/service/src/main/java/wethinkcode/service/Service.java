@@ -4,7 +4,6 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.json.JsonMapper;
 import io.javalin.plugin.bundled.CorsPluginConfig;
-import org.apache.activemq.broker.BrokerService;
 import picocli.CommandLine;
 import wethinkcode.service.controllers.Controllers;
 import wethinkcode.service.json.GSONMapper;
@@ -26,14 +25,18 @@ import java.util.stream.Stream;
 
 import static wethinkcode.logger.Logger.formatted;
 import static wethinkcode.service.Checks.*;
+import static wethinkcode.service.messages.Broker.startBroker;
 import static wethinkcode.service.properties.Properties.populateFields;
 
+/**
+ * The Service class is used to create a Javalin server instance and allow a user to create a Javalin server
+ * by annotating a class with the `Service` annotation. The `execute` method sets up the Javalin server and creates
+ * a new instance of the user's class with the `Service` annotation. It also initializes the properties of the user's
+ * class by calling the `initProperties` method and initializes the Javalin server by calling the `initHttpServer` method.
+ *
+ * @param <E> The type parameter for the user's class with the `Service` annotation
+ */
 public class Service<E>{
-    private static final BrokerService BROKER = new BrokerService();
-    private static int SERVICE_COUNT = 0;
-    private static final Logger BROKER_LOGGER = formatted("Message Queue", "\u001B[38;5;247m", "\u001B[38;5;249m");
-
-
     /**
      * The class annotated as a service
      */
@@ -73,16 +76,8 @@ public class Service<E>{
     )
     String domain = "http://localhost";
 
-    /**
-     * Port for the service
-     */
-    @CommandLine.Option(
-            names = {"--broker-port", "-bp"},
-            description = "The port of the activeMQ broker",
-            type = Integer.class
-    )
-    static String BROKER_PORT = BrokerService.DEFAULT_PORT;
 
+    private static int SERVICE_COUNT = 0;
     private final Logger logger;
 
     /**
@@ -121,7 +116,7 @@ public class Service<E>{
         SERVICE_COUNT++;
         logger.info("Active Service Count: " + SERVICE_COUNT);
 
-        startMessageQueue();
+        startBroker();
         Method[] methods = instance.getClass().getMethods();
         initProperties(args);
         logger.info("Properties Instantiated");
@@ -170,72 +165,8 @@ public class Service<E>{
         server.stop();
         SERVICE_COUNT--;
         logger.info("Active Service Count: " + SERVICE_COUNT);
-        if (SERVICE_COUNT == 0){
-            endMessageQueue();
-        }
     }
 
-    private static void endMessageQueue(){
-        if (!BROKER.isStarted()){
-            return;
-        }
-
-        BROKER_LOGGER.info("Closing ActiveMQ Service...");
-        try {
-            BROKER.stop();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        BROKER_LOGGER.info("Closed ActiveMQ Service");
-
-    }
-
-    private static void startMessageQueue(){
-        if (BROKER.isStarted()){
-            return;
-        }
-
-//        BROKER_LOGGER.info("Starting ActiveMQ Service...");
-//        BROKER.setPersistent(false);
-//        BROKER.setBrokerName("Service Broker");
-//        try {
-//            BROKER.addConnector("tcp://localhost:" + BROKER_PORT);
-//            BROKER.start();
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//        BROKER_LOGGER.info("Started ActiveMQ Service");
-
-//        MESSAGE_QUEUE_THREAD = new Thread(() -> {
-//            final BufferedReader r = new BufferedReader(new InputStreamReader(finalP.getInputStream()));
-//            String line;
-//            while (true) {
-//                try {
-//                    line = r.readLine();
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//
-//                if (line == null) {
-//                    endMessageQueue();
-//                    break;
-//                }
-//
-//                if (line.contains("ERROR: ActiveMQ is already running")){
-//                    MESSAGE_QUEUE_LOGGER.warning("Active MQ Started elsewhere. Shutting down...");
-//                    System.exit(3);
-//                }
-//
-//                if (line.contains("ActiveMQ WebConsole available at ")) {
-//                    Service.MESSAGE_QUEUE_URL = line.replace("ActiveMQ WebConsole available at ", "");
-//                    active.set(true);
-//                }
-//                MESSAGE_QUEUE_LOGGER.info(line.replace("INFO | ", "").replace("INFO: ", "").strip());
-//            }
-//        });
-//        MESSAGE_QUEUE_THREAD.setName("Message Queue");
-//        MESSAGE_QUEUE_THREAD.start();
-    }
 
     private boolean startPublishing(Field[] fields) {
         Stream<Field> f = Arrays

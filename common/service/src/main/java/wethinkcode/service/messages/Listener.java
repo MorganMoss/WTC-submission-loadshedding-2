@@ -1,11 +1,12 @@
 package wethinkcode.service.messages;
 
-import org.apache.qpid.jms.*;
 import javax.jms.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static wethinkcode.logger.Logger.formatted;
+import static wethinkcode.service.messages.Broker.getDestination;
+import static wethinkcode.service.messages.Broker.getSession;
 
 public class Listener {
 
@@ -23,26 +24,14 @@ public class Listener {
         this.password = env("ACTIVEMQ_PASSWORD", "admin");
 
         String host = env("ACTIVEMQ_HOST", "localhost");
-        int port = Integer.parseInt(env("ACTIVEMQ_PORT", "5672"));
-        this.connectionURI = "amqp://" + host + ":" + port;
-//        this.connectionURI = Service.MESSAGE_QUEUE_URL;
+        this.connectionURI = "amqp://" + host + ":" + Broker.PORT;
     }
 
     public void listen(Consumer<String> messageConsumer) {
         try {
 
-        JmsConnectionFactory factory = new JmsConnectionFactory(connectionURI);
-        Connection connection = factory.createConnection(user, password);
-        logger.info("Starting Listener on " + destinationName);
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-        Destination destination = null;
-        if (destinationName.startsWith(Prefix.TOPIC.prefix)) {
-            destination = session.createTopic(destinationName.substring(Prefix.TOPIC.prefix.length()));
-        } else {
-            destination = session.createQueue(destinationName.substring(Prefix.QUEUE.prefix.length()));
-        }
+        Session session = getSession();
+        Destination destination = getDestination(session, destinationName);
 
         MessageConsumer consumer = session.createConsumer(destination);
         long start = System.currentTimeMillis();
@@ -56,14 +45,8 @@ public class Listener {
                     if ("SHUTDOWN".equals(body)) {
                         long diff = System.currentTimeMillis() - start;
                         logger.info(String.format("Received %d in %.2f seconds", count, (1.0 * diff / 1000.0)));
-                        connection.close();
-                        try {
-                            Thread.sleep(10);
-                        } catch (Exception e) {
-                        }
                         System.exit(0);
                     }
-                    logger.info("Processing Message...");
                     messageConsumer.accept(body);
                     logger.info("Message Processed");
                 } else {
